@@ -46,19 +46,44 @@ func (r *Router) ServeContext(ctx *Context) {
 
 		pParts := splitPath(rt.pattern)
 		rParts := splitPath(ctx.Request.URL.Path)
-		if len(pParts) != len(rParts) {
-			continue
+
+		// Check for wildcard pattern (*)
+		hasWildcard := len(pParts) > 0 && pParts[len(pParts)-1] == "*"
+
+		// For wildcard routes, we need at least as many parts as the pattern (minus the wildcard)
+		if hasWildcard {
+			if len(rParts) < len(pParts)-1 {
+				continue
+			}
+		} else {
+			// For non-wildcard routes, parts must match exactly
+			if len(pParts) != len(rParts) {
+				continue
+			}
 		}
 
 		params := map[string]string{}
 		matched := true
-		for i := 0; i < len(pParts); i++ {
+
+		// Check parts up to wildcard (if any)
+		partsToCheck := len(pParts)
+		if hasWildcard {
+			partsToCheck = len(pParts) - 1
+		}
+
+		for i := 0; i < partsToCheck; i++ {
 			if strings.HasPrefix(pParts[i], ":") {
 				params[strings.TrimPrefix(pParts[i], ":")] = rParts[i]
 			} else if pParts[i] != rParts[i] {
 				matched = false
 				break
 			}
+		}
+
+		// If we have a wildcard, capture the remaining path
+		if matched && hasWildcard && len(rParts) > partsToCheck {
+			remainingParts := rParts[partsToCheck:]
+			params["*"] = strings.Join(remainingParts, "/")
 		}
 
 		if matched {

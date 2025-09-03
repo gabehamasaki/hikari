@@ -58,6 +58,10 @@ func (c *Context) Param(key string) string {
 	return c.Params[key]
 }
 
+func (c *Context) Wildcard() string {
+	return c.Params["*"]
+}
+
 func (c *Context) Query(key string) string {
 	return c.Request.URL.Query().Get(key)
 }
@@ -92,4 +96,8 @@ func (c *Context) Status(status int) {
 
 func (c *Context) GetStatus() int {
 	return c.Writer.StatusCode()
+}
+
+func (c *Context) File(filePath string) {
+	http.ServeFile(c.Writer, c.Request, filePath)
 }

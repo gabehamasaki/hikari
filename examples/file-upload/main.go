@@ -396,9 +396,8 @@ func deleteFile(c *hikari.Context) {
 }
 
 func serveStatic(c *hikari.Context) {
-	// Extract the file path from the URL
-	requestPath := c.Request.URL.Path
-	filePath := strings.TrimPrefix(requestPath, "/static/")
+	// Get the file path from the wildcard parameter
+	filePath := c.Wildcard()
 
 	if filePath == "" {
 		c.JSON(http.StatusBadRequest, map[string]string{
@@ -410,7 +409,9 @@ func serveStatic(c *hikari.Context) {
 	fullPath := filepath.Join(uploadDir, filePath)
 
 	// Security check: ensure the path is within the upload directory
-	if !strings.HasPrefix(fullPath, uploadDir) {
+	absUploadDir, _ := filepath.Abs(uploadDir)
+	absFullPath, _ := filepath.Abs(fullPath)
+	if !strings.HasPrefix(absFullPath, absUploadDir) {
 		c.JSON(http.StatusForbidden, map[string]string{
 			"error": "Access denied",
 		})
@@ -426,7 +427,7 @@ func serveStatic(c *hikari.Context) {
 	}
 
 	// Serve the file
-	http.ServeFile(c.Writer, c.Request, fullPath)
+	c.File(fullPath)
 }
 
 func healthCheck(c *hikari.Context) {

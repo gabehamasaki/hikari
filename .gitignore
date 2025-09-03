@@ -1,1 +1,4 @@
-/uploads
+# Upload directories and their contents
+/uploads/
+uploads/
+**/uploads/
