@@ -6,9 +6,10 @@ import (
 )
 
 type route struct {
-	method  string
-	pattern string
-	handler HandlerFunc
+	method      string
+	pattern     string
+	handler     HandlerFunc
+	middlewares []Middleware
 }
 
 type Router struct {
@@ -21,11 +22,12 @@ func NewRouter() *Router {
 	}
 }
 
-func (r *Router) Handle(method, pattern string, handler HandlerFunc) {
+func (r *Router) Handle(method, pattern string, handler HandlerFunc, middlewares ...Middleware) {
 	r.routes = append(r.routes, route{
-		method:  method,
-		pattern: pattern,
-		handler: handler,
+		method:      method,
+		pattern:     pattern,
+		handler:     handler,
+		middlewares: middlewares,
 	})
 }
 
@@ -89,7 +91,15 @@ func (r *Router) ServeContext(ctx *Context) {
 		if matched {
 			// Update the existing context with route parameters
 			ctx.Params = params
-			rt.handler(ctx)
+
+			handler := rt.handler
+			// Apply user middlewares first (in reverse order)
+			for i := len(rt.middlewares) - 1; i >= 0; i-- {
+				handler = rt.middlewares[i](handler)
+			}
+
+			handler(ctx)
+
 			return
 		}
 	}

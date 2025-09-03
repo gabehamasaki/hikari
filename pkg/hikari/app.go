@@ -41,24 +41,24 @@ func New(addr string) *App {
 	}
 }
 
-func (a *App) GET(pattern string, handler HandlerFunc) {
-	a.router.Handle(http.MethodGet, pattern, handler)
+func (a *App) GET(pattern string, handler HandlerFunc, middlewares ...Middleware) {
+	a.router.Handle(http.MethodGet, pattern, handler, middlewares...)
 }
 
-func (a *App) POST(pattern string, handler HandlerFunc) {
-	a.router.Handle(http.MethodPost, pattern, handler)
+func (a *App) POST(pattern string, handler HandlerFunc, middlewares ...Middleware) {
+	a.router.Handle(http.MethodPost, pattern, handler, middlewares...)
 }
 
-func (a *App) PUT(pattern string, handler HandlerFunc) {
-	a.router.Handle(http.MethodPut, pattern, handler)
+func (a *App) PUT(pattern string, handler HandlerFunc, middlewares ...Middleware) {
+	a.router.Handle(http.MethodPut, pattern, handler, middlewares...)
 }
 
-func (a *App) PATCH(pattern string, handler HandlerFunc) {
-	a.router.Handle(http.MethodPatch, pattern, handler)
+func (a *App) PATCH(pattern string, handler HandlerFunc, middlewares ...Middleware) {
+	a.router.Handle(http.MethodPatch, pattern, handler, middlewares...)
 }
 
-func (a *App) DELETE(pattern string, handler HandlerFunc) {
-	a.router.Handle(http.MethodDelete, pattern, handler)
+func (a *App) DELETE(pattern string, handler HandlerFunc, middlewares ...Middleware) {
+	a.router.Handle(http.MethodDelete, pattern, handler, middlewares...)
 }
 
 func (a *App) Use(middleware Middleware) {
