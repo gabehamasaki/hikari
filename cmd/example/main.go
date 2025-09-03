@@ -3,7 +3,7 @@ package main
 import (
 	"net/http"
 
-	"github.com/gabehamasaki/hikari-go/internal/hikari"
+	"github.com/gabehamasaki/hikari-go/pkg/hikari"
 )
 
 func main() {

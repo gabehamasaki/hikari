@@ -31,7 +31,7 @@ package main
 
 import (
     "net/http"
-    "github.com/gabehamasaki/hikari-go/internal/hikari"
+    "github.com/gabehamasaki/hikari-go/pkg/hikari"
 )
 
 func main() {
@@ -213,7 +213,7 @@ package main
 import (
     "net/http"
     "strconv"
-    "github.com/gabehamasaki/hikari-go/internal/hikari"
+    "github.com/gabehamasaki/hikari-go/pkg/hikari"
 )
 
 type User struct {

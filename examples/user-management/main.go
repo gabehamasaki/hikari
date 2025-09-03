@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gabehamasaki/hikari-go/internal/hikari"
+	"github.com/gabehamasaki/hikari-go/pkg/hikari"
 )
 
 type User struct {
