@@ -46,7 +46,7 @@ func main() {
 	// Initialize with admin user
 	initializeUsers()
 
-	// Middleware for JSON responses
+	// Middleware for JSON responses (global)
 	app.Use(func(next hikari.HandlerFunc) hikari.HandlerFunc {
 		return func(c *hikari.Context) {
 			c.SetHeader("Content-Type", "application/json")
@@ -61,17 +61,17 @@ func main() {
 	app.POST("/auth/logout", logout)
 
 	// Protected routes (require authentication)
-	app.GET("/users", wrapWithAuth(getUsers))
-	app.GET("/users/:id", wrapWithAuth(getUser))
-	app.PUT("/users/:id", wrapWithAuth(updateUser))
-	app.DELETE("/users/:id", wrapWithAdminAuth(deleteUser))
-	app.GET("/profile", wrapWithAuth(getProfile))
-	app.PUT("/profile", wrapWithAuth(updateProfile))
+	app.GET("/users", getUsers, authMiddleware)
+	app.GET("/users/:id", getUser, authMiddleware)
+	app.PUT("/users/:id", updateUser, authMiddleware)
+	app.DELETE("/users/:id", deleteUser, authMiddleware, adminMiddleware)
+	app.GET("/profile", getProfile, authMiddleware)
+	app.PUT("/profile", updateProfile, authMiddleware)
 
 	// Admin only routes
-	app.GET("/admin/users", wrapWithAdminAuth(adminGetUsers))
-	app.PATCH("/admin/users/:id/activate", wrapWithAdminAuth(activateUser))
-	app.PATCH("/admin/users/:id/deactivate", wrapWithAdminAuth(deactivateUser))
+	app.GET("/admin/users", adminGetUsers, authMiddleware, adminMiddleware)
+	app.PATCH("/admin/users/:id/activate", activateUser, authMiddleware, adminMiddleware)
+	app.PATCH("/admin/users/:id/deactivate", deactivateUser, authMiddleware, adminMiddleware)
 
 	fmt.Println("🚀 User Management Server running on http://localhost:8081")
 	app.ListenAndServe()
@@ -509,14 +509,6 @@ func adminMiddleware(next hikari.HandlerFunc) hikari.HandlerFunc {
 }
 
 // Helper functions
-func wrapWithAuth(handler hikari.HandlerFunc) hikari.HandlerFunc {
-	return authMiddleware(handler)
-}
-
-func wrapWithAdminAuth(handler hikari.HandlerFunc) hikari.HandlerFunc {
-	return authMiddleware(adminMiddleware(handler))
-}
-
 func getCurrentUser(c *hikari.Context) *User {
 	token := getTokenFromRequest(c)
 	return sessions[token]

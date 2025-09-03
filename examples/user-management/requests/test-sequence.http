@@ -1,0 +1,121 @@
+###
+# User Management API - Test Sequence
+# Execute these requests in order to test the full workflow
+###
+
+@baseUrl = http://localhost:8081
+
+### Step 1: Get API Info
+GET {{baseUrl}}/
+
+### Step 2: Register a new user
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "username": "testuser",
+  "email": "testuser@example.com",
+  "password": "testpass123"
+}
+
+### Step 3: Login as admin (save token)
+# @name adminLogin
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "admin123"
+}
+
+### Step 4: Login as regular user (save token)
+# @name userLogin
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "username": "john",
+  "password": "password123"
+}
+
+### Step 5: Login as newly created user
+# @name testUserLogin
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "username": "testuser",
+  "password": "testpass123"
+}
+
+### Step 6: Get profile as test user
+GET {{baseUrl}}/profile
+Authorization: Bearer {{testUserLogin.response.body.token}}
+
+### Step 7: List users as authenticated user
+GET {{baseUrl}}/users
+Authorization: Bearer {{userLogin.response.body.token}}
+
+### Step 8: Get specific user
+GET {{baseUrl}}/users/1
+Authorization: Bearer {{userLogin.response.body.token}}
+
+### Step 9: Update own profile
+PUT {{baseUrl}}/profile
+Authorization: Bearer {{userLogin.response.body.token}}
+Content-Type: application/json
+
+{
+  "email": "john.new@example.com"
+}
+
+### Step 10: Try to update another user (should fail)
+PUT {{baseUrl}}/users/1
+Authorization: Bearer {{userLogin.response.body.token}}
+Content-Type: application/json
+
+{
+  "email": "shouldfail@example.com"
+}
+
+### Step 11: Admin - List all users
+GET {{baseUrl}}/admin/users
+Authorization: Bearer {{adminLogin.response.body.token}}
+
+### Step 12: Admin - Deactivate test user
+PATCH {{baseUrl}}/admin/users/3/deactivate
+Authorization: Bearer {{adminLogin.response.body.token}}
+
+### Step 13: Admin - Try to login as deactivated user (should fail)
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "username": "testuser",
+  "password": "testpass123"
+}
+
+### Step 14: Admin - Reactivate user
+PATCH {{baseUrl}}/admin/users/3/activate
+Authorization: Bearer {{adminLogin.response.body.token}}
+
+### Step 15: Admin - Update any user
+PUT {{baseUrl}}/users/2
+Authorization: Bearer {{adminLogin.response.body.token}}
+Content-Type: application/json
+
+{
+  "email": "john.admin.updated@example.com"
+}
+
+### Step 16: Admin - Delete user
+DELETE {{baseUrl}}/users/3
+Authorization: Bearer {{adminLogin.response.body.token}}
+
+### Step 17: Logout admin
+POST {{baseUrl}}/auth/logout
+Authorization: Bearer {{adminLogin.response.body.token}}
+
+### Step 18: Logout regular user
+POST {{baseUrl}}/auth/logout
+Authorization: Bearer {{userLogin.response.body.token}}

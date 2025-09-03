@@ -172,14 +172,15 @@ curl -H "Authorization: Bearer ADMIN_TOKEN" \
 
 ## Demonstrated Features
 
-- **Authentication Middleware**: Token verification
-- **Authorization Middleware**: Role-based control
+- **Per-Route Middleware**: Middleware applied directly to specific routes
+- **Authentication Middleware**: Token verification per route
+- **Authorization Middleware**: Role-based control per route
 - **Password Hashing**: Using SHA-256 for passwords
 - **Session Management**: Simple session management
 - **Input Validation**: Email and required data validation
 - **Error Handling**: Error handling and appropriate responses
-- **Route Protection**: Routes protected by authentication
-- **Role-based Access**: Role-based access control
+- **Route Protection**: Routes protected by authentication middleware
+- **Role-based Access**: Role-based access control with admin middleware
 
 ## Security Structure
 

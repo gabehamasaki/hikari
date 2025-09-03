@@ -1,0 +1,143 @@
+###
+# File Upload API - Test Sequence
+# Execute these requests in order to test the full workflow
+###
+
+@baseUrl = http://localhost:8082
+
+### Step 1: Get API Info
+GET {{baseUrl}}/
+
+### Step 2: Check Health
+GET {{baseUrl}}/health
+
+### Step 3: List files (should be empty initially)
+GET {{baseUrl}}/files
+
+### Step 4: Upload first file
+# @name uploadFile1
+POST {{baseUrl}}/upload
+Content-Type: multipart/form-data; boundary=boundary
+
+--boundary
+Content-Disposition: form-data; name="file"; filename="test-document.txt"
+Content-Type: text/plain
+
+This is a test document for the file upload API.
+It contains multiple lines of text.
+Perfect for testing file upload functionality.
+--boundary--
+
+### Step 5: Upload second file (JSON)
+# @name uploadFile2
+POST {{baseUrl}}/upload
+Content-Type: multipart/form-data; boundary=boundary
+
+--boundary
+Content-Disposition: form-data; name="file"; filename="config.json"
+Content-Type: application/json
+
+{
+  "app_name": "File Upload API",
+  "version": "1.0.0",
+  "settings": {
+    "max_file_size": "10MB",
+    "allowed_types": ["*"]
+  }
+}
+--boundary--
+
+### Step 6: Upload multiple files at once
+# @name uploadMultiple
+POST {{baseUrl}}/upload/multiple
+Content-Type: multipart/form-data; boundary=boundary
+
+--boundary
+Content-Disposition: form-data; name="files"; filename="batch1.txt"
+Content-Type: text/plain
+
+Batch upload file 1
+--boundary
+Content-Disposition: form-data; name="files"; filename="batch2.txt"
+Content-Type: text/plain
+
+Batch upload file 2
+--boundary
+Content-Disposition: form-data; name="files"; filename="batch3.csv"
+Content-Type: text/csv
+
+name,age,city
+John,30,New York
+Jane,25,Los Angeles
+--boundary--
+
+### Step 7: List all uploaded files
+GET {{baseUrl}}/files
+
+### Step 8: Get information about first uploaded file
+# Use the file ID from Step 4 response
+GET {{baseUrl}}/files/{{uploadFile1.response.body.file.id}}
+
+### Step 9: Download the first file
+GET {{baseUrl}}/download/{{uploadFile1.response.body.file.id}}
+
+### Step 10: Access file via static serving
+GET {{baseUrl}}/static/{{uploadFile1.response.body.file.name}}
+
+### Step 11: Get information about JSON file
+GET {{baseUrl}}/files/{{uploadFile2.response.body.file.id}}
+
+### Step 12: Download JSON file
+GET {{baseUrl}}/download/{{uploadFile2.response.body.file.id}}
+
+### Step 13: Delete first file
+DELETE {{baseUrl}}/files/{{uploadFile1.response.body.file.id}}
+
+### Step 14: Try to get deleted file (should fail)
+GET {{baseUrl}}/files/{{uploadFile1.response.body.file.id}}
+
+### Step 15: Try to download deleted file (should fail)
+GET {{baseUrl}}/download/{{uploadFile1.response.body.file.id}}
+
+### Step 16: List remaining files
+GET {{baseUrl}}/files
+
+### Step 17: Upload file with special characters
+# @name uploadSpecial
+POST {{baseUrl}}/upload
+Content-Type: multipart/form-data; boundary=boundary
+
+--boundary
+Content-Disposition: form-data; name="file"; filename="special chars & symbols.txt"
+Content-Type: text/plain
+
+This file has special characters in its name!
+It tests how the API handles unusual filenames.
+--boundary--
+
+### Step 18: Upload empty file
+# @name uploadEmpty
+POST {{baseUrl}}/upload
+Content-Type: multipart/form-data; boundary=boundary
+
+--boundary
+Content-Disposition: form-data; name="file"; filename="empty.txt"
+Content-Type: text/plain
+
+
+--boundary--
+
+### Step 19: Final file listing
+GET {{baseUrl}}/files
+
+### Step 20: Clean up - Delete remaining files
+DELETE {{baseUrl}}/files/{{uploadFile2.response.body.file.id}}
+
+### Step 21: Clean up - Delete special file
+DELETE {{baseUrl}}/files/{{uploadSpecial.response.body.file.id}}
+
+### Step 22: Clean up - Delete empty file
+DELETE {{baseUrl}}/files/{{uploadEmpty.response.body.file.id}}
+
+### Step 23: Verify cleanup - Should be empty
+GET {{baseUrl}}/files
