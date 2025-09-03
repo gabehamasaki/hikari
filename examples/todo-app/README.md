@@ -1,100 +1,102 @@
 # Todo App Example
 
-Uma API REST simples para gerenciamento de tarefas usando Hikari-Go.
+A simple REST API for task management using Hikari-Go.
 
-## Características
+**Language / Idioma:** [English](README.md) | [Português Brasil](README.pt-BR.md)
 
-- CRUD completo para todos
-- Filtragem por status (completed/pending)
-- Middleware de CORS personalizado
-- Validação de dados
-- Estrutura JSON organizada
+## Features
 
-## Como executar
+- Complete CRUD for tasks
+- Filtering by status (completed/pending)
+- Custom CORS middleware
+- Data validation
+- Organized JSON structure
+
+## How to run
 
 ```bash
 cd examples/todo-app
 go run main.go
 ```
 
-O servidor será iniciado em `http://localhost:8080`
+The server will start at `http://localhost:8080`
 
 ## Endpoints
 
 ### GET /
-Retorna informações sobre a API e lista de endpoints disponíveis.
+Returns information about the API and list of available endpoints.
 
 ### GET /todos
-Lista todas as tarefas.
+Lists all tasks.
 
 **Query Parameters:**
-- `status`: `completed` ou `pending` para filtrar tarefas
+- `status`: `completed` or `pending` to filter tasks
 
-**Exemplo:**
+**Example:**
 ```bash
 curl http://localhost:8080/todos
 curl http://localhost:8080/todos?status=completed
 ```
 
 ### GET /todos/:id
-Retorna uma tarefa específica por ID.
+Returns a specific task by ID.
 
-**Exemplo:**
+**Example:**
 ```bash
 curl http://localhost:8080/todos/1
 ```
 
 ### POST /todos
-Cria uma nova tarefa.
+Creates a new task.
 
 **Body:**
 ```json
 {
-  "title": "Nova tarefa",
-  "content": "Descrição da tarefa"
+  "title": "New task",
+  "content": "Task description"
 }
 ```
 
-**Exemplo:**
+**Example:**
 ```bash
 curl -X POST http://localhost:8080/todos \
   -H "Content-Type: application/json" \
-  -d '{"title":"Estudar Go","content":"Aprender sobre goroutines"}'
+  -d '{"title":"Study Go","content":"Learn about goroutines"}'
 ```
 
 ### PUT /todos/:id
-Atualiza uma tarefa existente.
+Updates an existing task.
 
 **Body:**
 ```json
 {
-  "title": "Título atualizado",
-  "content": "Conteúdo atualizado",
+  "title": "Updated title",
+  "content": "Updated content",
   "completed": true
 }
 ```
 
 ### DELETE /todos/:id
-Remove uma tarefa.
+Removes a task.
 
-**Exemplo:**
+**Example:**
 ```bash
 curl -X DELETE http://localhost:8080/todos/1
 ```
 
 ### PATCH /todos/:id/toggle
-Alterna o status de conclusão de uma tarefa.
+Toggles the completion status of a task.
 
-**Exemplo:**
+**Example:**
 ```bash
 curl -X PATCH http://localhost:8080/todos/1/toggle
 ```
 
-## Funcionalidades Demonstradas
+## Demonstrated Features
 
-- **Routing**: Diferentes métodos HTTP e parâmetros de rota
-- **JSON Binding**: Deserialização automática de JSON
-- **Query Parameters**: Filtragem usando query strings
-- **Custom Middleware**: CORS middleware personalizado
-- **Error Handling**: Validação e tratamento de erros
-- **Response Formatting**: Respostas JSON estruturadas
+- **Routing**: Different HTTP methods and route parameters
+- **JSON Binding**: Automatic JSON deserialization
+- **Query Parameters**: Filtering using query strings
+- **Custom Middleware**: Custom CORS middleware
+- **Error Handling**: Validation and error handling
+- **Response Formatting**: Structured JSON responses

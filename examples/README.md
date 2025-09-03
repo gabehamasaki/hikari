@@ -1,71 +1,73 @@
 # Hikari-Go Examples
 
-Esta pasta contém exemplos práticos demonstrando as funcionalidades do framework Hikari-Go. Cada exemplo é uma aplicação completa e funcional que você pode executar e estudar.
+**Language / Idioma:** [English](README.md) | [Português Brasil](README.pt-BR.md)
 
-## 📋 Lista de Exemplos
+This folder contains practical examples demonstrating the features of the Hikari-Go framework. Each example is a complete and functional application that you can run and study.
+
+## 📋 Examples List
 
 ### 1. [Todo App](./todo-app/)
-**Porta:** `:8080`
+**Port:** `:8080`
 
-Uma API REST completa para gerenciamento de tarefas demonstrando:
-- CRUD básico (Create, Read, Update, Delete)
-- Parâmetros de rota dinâmicos
-- Query parameters para filtragem
-- Middleware personalizado (CORS)
-- Validação de dados
-- Estruturas JSON organizadas
+A complete REST API for task management demonstrating:
+- Basic CRUD (Create, Read, Update, Delete)
+- Dynamic route parameters
+- Query parameters for filtering
+- Custom middleware (CORS)
+- Data validation
+- Organized JSON structures
 
-**Como executar:**
+**How to run:**
 ```bash
 cd examples/todo-app
 go run main.go
 ```
 
 ### 2. [User Management](./user-management/)
-**Porta:** `:8081`
+**Port:** `:8081`
 
-Sistema completo de gerenciamento de usuários com autenticação e autorização:
-- Sistema de registro e login
-- Autenticação baseada em tokens
-- Middleware de autenticação
-- Controle de acesso por roles (user/admin)
-- Hash de senhas
-- Validação de dados
-- Endpoints protegidos
+Complete user management system with authentication and authorization:
+- Registration and login system
+- Token-based authentication
+- Authentication middleware
+- Role-based access control (user/admin)
+- Password hashing
+- Data validation
+- Protected endpoints
 
-**Como executar:**
+**How to run:**
 ```bash
 cd examples/user-management
 go run main.go
 ```
 
-**Usuários padrão:**
+**Default users:**
 - Admin: `admin/admin123`
 - User: `john/password123`
 
 ### 3. [File Upload](./file-upload/)
-**Porta:** `:8082`
+**Port:** `:8082`
 
-Sistema de upload e gerenciamento de arquivos:
-- Upload de arquivo único
-- Upload de múltiplos arquivos
-- Download de arquivos
-- Servir arquivos estáticos
-- Validação de tipo e tamanho
-- Listagem e remoção de arquivos
+File upload and management system:
+- Single file upload
+- Multiple file upload
+- File download
+- Static file serving
+- File type and size validation
+- File listing and removal
 - Health check
 
-**Como executar:**
+**How to run:**
 ```bash
 cd examples/file-upload
 go run main.go
 ```
 
-**Interface de teste:** Abra `test.html` em seu navegador após iniciar o servidor.
+**Test interface:** Open `test.html` in your browser after starting the server.
 
-## 🚀 Execução Rápida
+## 🚀 Quick Start
 
-Para testar todos os exemplos rapidamente:
+To test all examples quickly:
 
 ```bash
 # Terminal 1 - Todo App
@@ -78,104 +80,104 @@ cd examples/user-management && go run main.go
 cd examples/file-upload && go run main.go
 ```
 
-**URLs de acesso:**
+**Access URLs:**
 - Todo App: http://localhost:8080
 - User Management: http://localhost:8081
 - File Upload: http://localhost:8082
 
-## 📊 Funcionalidades Demonstradas
+## 📊 Demonstrated Features
 
 ### Routing & HTTP Methods
 - `GET`, `POST`, `PUT`, `PATCH`, `DELETE`
-- Parâmetros de rota (`:id`, `:name`)
+- Route parameters (`:id`, `:name`)
 - Query parameters (`?status=completed`)
-- Paths dinâmicos (`/static/*`)
+- Dynamic paths (`/static/*`)
 
 ### Middlewares
-- Middleware global (`app.Use()`)
-- Middleware personalizado (CORS)
-- Middleware de autenticação
-- Middleware de autorização
-- Chaining de middlewares
+- Global middleware (`app.Use()`)
+- Custom middleware (CORS)
+- Authentication middleware
+- Authorization middleware
+- Middleware chaining
 
 ### Request/Response Handling
 - JSON binding (`c.Bind()`)
 - JSON responses (`c.JSON()`)
 - Form data handling
 - File uploads (multipart/form-data)
-- Headers customizados
-- Status codes personalizados
+- Custom headers
+- Custom status codes
 
-### Validação & Segurança
-- Validação de entrada
-- Hash de senhas
-- Autenticação por tokens
-- Autorização por roles
-- Validação de tipos de arquivo
-- Prevenção de directory traversal
+### Validation & Security
+- Input validation
+- Password hashing
+- Token authentication
+- Role-based authorization
+- File type validation
+- Directory traversal prevention
 
 ### Error Handling
-- Tratamento de erros HTTP
-- Respostas de erro estruturadas
-- Recovery middleware integrado
-- Logging contextual
+- HTTP error handling
+- Structured error responses
+- Built-in recovery middleware
+- Contextual logging
 
-## 🛠️ Estrutura de Cada Exemplo
+## 🛠️ Structure of Each Example
 
-Cada aplicação de exemplo contém:
+Each example application contains:
 
 ```
 example-name/
-├── main.go          # Código principal da aplicação
-├── README.md        # Documentação específica
-└── ...             # Arquivos adicionais quando necessário
+├── main.go          # Main application code
+├── README.md        # Specific documentation
+└── ...             # Additional files when needed
 ```
 
-## 📚 Como Estudar os Exemplos
+## 📚 How to Study the Examples
 
-1. **Comece pelo Todo App** - É o mais simples e mostra os conceitos básicos
-2. **Prossiga para User Management** - Adiciona autenticação e autorização
-3. **Termine com File Upload** - Demonstra manipulação de arquivos e uploads
+1. **Start with Todo App** - It's the simplest and shows basic concepts
+2. **Move to User Management** - Adds authentication and authorization
+3. **Finish with File Upload** - Demonstrates file manipulation and uploads
 
-Para cada exemplo:
-1. Leia o README específico
-2. Examine o código `main.go`
-3. Execute a aplicação
-4. Teste os endpoints com curl ou interface web
-5. Experimente modificar o código
+For each example:
+1. Read the specific README
+2. Examine the `main.go` code
+3. Run the application
+4. Test the endpoints with curl or web interface
+5. Try modifying the code
 
-## 🔧 Requisitos
+## 🔧 Requirements
 
-- Go 1.24.4 ou superior
-- Dependências especificadas em `go.mod`:
+- Go 1.24.4 or higher
+- Dependencies specified in `go.mod`:
   - `go.uber.org/zap` (logging)
 
-## 📝 Notas de Desenvolvimento
+## 📝 Development Notes
 
-Estes exemplos foram criados para fins educacionais e demonstram:
+These examples were created for educational purposes and demonstrate:
 
-- **Boas práticas** de desenvolvimento web em Go
-- **Padrões REST** para APIs
-- **Estruturação** de aplicações web
-- **Tratamento de erros** adequado
-- **Documentação** clara de APIs
+- **Best practices** for web development in Go
+- **REST patterns** for APIs
+- **Structuring** web applications
+- **Proper error handling**
+- **Clear API documentation**
 
-Para uso em produção, considere implementar:
-- Banco de dados persistente
-- Configuração via variáveis de ambiente
-- Logs estruturados
-- Testes automatizados
+For production use, consider implementing:
+- Persistent database
+- Configuration via environment variables
+- Structured logging
+- Automated testing
 - Docker containers
 - CI/CD pipelines
 
-## 🤝 Contribuindo
+## 🤝 Contributing
 
-Quer adicionar mais exemplos? Considere criar:
+Want to add more examples? Consider creating:
 - WebSocket chat
 - GraphQL API
-- Microserviços
+- Microservices
 - Background jobs
 - Template engine integration
 - Database integration (PostgreSQL, MongoDB)
 
-Cada novo exemplo deve seguir a mesma estrutura e incluir documentação completa.
+Each new example should follow the same structure and include complete documentation.

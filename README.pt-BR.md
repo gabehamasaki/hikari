@@ -2,29 +2,29 @@
 
 **Language / Idioma:** [English](README.md) | [Português Brasil](README.pt-BR.md)
 
-**Hikari** (光 - "light" in Japanese) is a lightweight, fast, and elegant HTTP web framework for Go. It provides a minimalistic yet powerful foundation for building modern web applications and APIs with built-in logging, recovery, and graceful shutdown capabilities.
+**Hikari** (光 - "luz" em japonês) é um framework web HTTP leve, rápido e elegante para Go. Ele fornece uma base minimalista, mas poderosa, para construir aplicações web modernas e APIs com logging integrado, recuperação e capacidades de desligamento gracioso.
 
-## ✨ Features
+## ✨ Recursos
 
-- 🚀 **Lightweight and Fast** - Minimal overhead with maximum performance
-- 🛡️ **Built-in Recovery** - Automatic panic recovery to prevent crashes
-- 📝 **Structured Logging** - Beautiful colored logs with Uber's Zap logger
-- 🔗 **Route Parameters** - Support for dynamic route parameters (`:param`)
-- 🧩 **Middleware Support** - Extensible middleware system
-- 🎯 **Context-based** - Rich context with JSON binding, query params, and more
-- 🛑 **Graceful Shutdown** - Proper server shutdown handling with signals
-- 📊 **Request Logging** - Automatic request/response logging with timing
+- 🚀 **Leve e Rápido** - Overhead mínimo com performance máxima
+- 🛡️ **Recuperação Integrada** - Recuperação automática de pânico para evitar crashes
+- 📝 **Logging Estruturado** - Logs coloridos bonitos com o logger Zap da Uber
+- 🔗 **Parâmetros de Rota** - Suporte para parâmetros de rota dinâmicos (`:param`)
+- 🧩 **Suporte a Middleware** - Sistema extensível de middleware
+- 🎯 **Baseado em Contexto** - Contexto rico com binding JSON, query params e mais
+- 🛑 **Desligamento Gracioso** - Manipulação adequada de desligamento do servidor com sinais
+- 📊 **Logging de Requisições** - Logging automático de requisição/resposta com timing
 
-## 🚀 Quick Start
+## 🚀 Início Rápido
 
-### Installation
+### Instalação
 
 ```bash
-go mod init your-project
+go mod init seu-projeto
 go get github.com/gabehamasaki/hikari-go
 ```
 
-### Basic Example
+### Exemplo Básico
 
 ```go
 package main
@@ -39,7 +39,7 @@ func main() {
 
     app.GET("/hello/:name", func(c *hikari.Context) {
         c.JSON(http.StatusOK, map[string]string{
-            "message": "Hello, " + c.Param("name") + "!",
+            "message": "Olá, " + c.Param("name") + "!",
             "status":  "success",
         })
     })
@@ -48,24 +48,24 @@ func main() {
 }
 ```
 
-Run your application:
+Execute sua aplicação:
 ```bash
 go run main.go
 ```
 
-Visit `http://localhost:8080/hello/world` to see your app in action!
+Visite `http://localhost:8080/hello/world` para ver sua app em ação!
 
-## 📚 Documentation
+## 📚 Documentação
 
-### Creating an App
+### Criando uma App
 
 ```go
 app := hikari.New(":8080")
 ```
 
-### HTTP Methods
+### Métodos HTTP
 
-Hikari supports all standard HTTP methods:
+Hikari suporta todos os métodos HTTP padrão:
 
 ```go
 app.GET("/users", getUsersHandler)
@@ -75,9 +75,9 @@ app.PATCH("/users/:id", patchUserHandler)
 app.DELETE("/users/:id", deleteUserHandler)
 ```
 
-### Route Parameters
+### Parâmetros de Rota
 
-Extract parameters from URLs using the `:param` syntax:
+Extraia parâmetros de URLs usando a sintaxe `:param`:
 
 ```go
 app.GET("/users/:id", func(c *hikari.Context) {
@@ -95,54 +95,54 @@ app.GET("/posts/:category/:id", func(c *hikari.Context) {
 })
 ```
 
-### Context Methods
+### Métodos de Contexto
 
-The `Context` provides various methods to handle requests and responses:
+O `Context` fornece vários métodos para lidar com requisições e respostas:
 
-#### Response Methods
+#### Métodos de Resposta
 ```go
-// JSON response
+// Resposta JSON
 c.JSON(http.StatusOK, map[string]interface{}{
-    "message": "Success",
+    "message": "Sucesso",
     "data": data,
 })
 
-// Set status code
+// Definir código de status
 c.Status(http.StatusCreated)
 
-// Set headers
+// Definir headers
 c.SetHeader("X-Custom-Header", "value")
 ```
 
-#### Request Methods
+#### Métodos de Requisição
 ```go
-// Get route parameter
+// Obter parâmetro de rota
 name := c.Param("name")
 
-// Get query parameter
+// Obter parâmetro de query
 page := c.Query("page")
 
-// Get form value
+// Obter valor de formulário
 email := c.FormValue("email")
 
-// Bind JSON request body to struct
+// Fazer bind do corpo da requisição JSON para struct
 var user User
 if err := c.Bind(&user); err != nil {
-    c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid JSON"})
+    c.JSON(http.StatusBadRequest, map[string]string{"error": "JSON inválido"})
     return
 }
 
-// Get request method and path
+// Obter método e path da requisição
 method := c.Method()
 path := c.Path()
 ```
 
 ### Middleware
 
-Create and use custom middleware:
+Crie e use middleware personalizado:
 
 ```go
-// CORS middleware example
+// Exemplo de middleware CORS
 func CORSMiddleware() hikari.Middleware {
     return func(next hikari.HandlerFunc) hikari.HandlerFunc {
         return func(c *hikari.Context) {
@@ -160,42 +160,42 @@ func CORSMiddleware() hikari.Middleware {
     }
 }
 
-// Use middleware
+// Usar middleware
 app.Use(CORSMiddleware())
 ```
 
-### Built-in Features
+### Recursos Integrados
 
-Hikari comes with several built-in features:
+Hikari vem com vários recursos integrados:
 
-#### 🛡️ Recovery Middleware
-Automatically recovers from panics and logs the error:
+#### 🛡️ Middleware de Recuperação
+Recupera automaticamente de pânicos e registra o erro:
 
 ```go
-// This is built-in and always enabled
-// No need to add recovery middleware manually
+// Isso é integrado e sempre habilitado
+// Não é necessário adicionar middleware de recuperação manualmente
 ```
 
-#### 📝 Request Logging
-Beautiful structured logging with request details:
+#### 📝 Logging de Requisições
+Belo logging estruturado com detalhes da requisição:
 
 ```
 2024-09-03 15:04:05  INFO  Request started  {"method": "GET", "path": "/users/123", "remote_addr": "127.0.0.1:54321"}
 2024-09-03 15:04:05  INFO  Request completed {"method": "GET", "path": "/users/123", "remote_addr": "127.0.0.1:54321", "status": 200, "duration": "2.5ms"}
 ```
 
-#### 🛑 Graceful Shutdown
-Handles shutdown signals gracefully:
+#### 🛑 Desligamento Gracioso
+Manipula sinais de desligamento graciosamente:
 
 ```go
-// Built-in - handles SIGINT/SIGTERM automatically
+// Integrado - manipula SIGINT/SIGTERM automaticamente
 app.ListenAndServe()
 ```
 
-## 🏗️ Project Structure
+## 🏗️ Estrutura do Projeto
 
 ```
-your-project/
+seu-projeto/
 ├── main.go
 ├── go.mod
 ├── go.sum
@@ -205,7 +205,7 @@ your-project/
         └── posts.go
 ```
 
-## 📝 Example: RESTful API
+## 📝 Exemplo: API RESTful
 
 ```go
 package main
@@ -223,8 +223,8 @@ type User struct {
 }
 
 var users = []User{
-    {ID: 1, Name: "John Doe", Email: "john@example.com"},
-    {ID: 2, Name: "Jane Smith", Email: "jane@example.com"},
+    {ID: 1, Name: "João Silva", Email: "joao@example.com"},
+    {ID: 2, Name: "Maria Santos", Email: "maria@example.com"},
 }
 
 func main() {
@@ -238,7 +238,7 @@ func main() {
         }
     })
 
-    // Routes
+    // Rotas
     app.GET("/users", getUsers)
     app.GET("/users/:id", getUser)
     app.POST("/users", createUser)
@@ -256,7 +256,7 @@ func getUsers(c *hikari.Context) {
 func getUser(c *hikari.Context) {
     id, err := strconv.Atoi(c.Param("id"))
     if err != nil {
-        c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid user ID"})
+        c.JSON(http.StatusBadRequest, map[string]string{"error": "ID de usuário inválido"})
         return
     }
 
@@ -267,13 +267,13 @@ func getUser(c *hikari.Context) {
         }
     }
 
-    c.JSON(http.StatusNotFound, map[string]string{"error": "User not found"})
+    c.JSON(http.StatusNotFound, map[string]string{"error": "Usuário não encontrado"})
 }
 
 func createUser(c *hikari.Context) {
     var newUser User
     if err := c.Bind(&newUser); err != nil {
-        c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid JSON"})
+        c.JSON(http.StatusBadRequest, map[string]string{"error": "JSON inválido"})
         return
     }
 
@@ -284,33 +284,33 @@ func createUser(c *hikari.Context) {
 }
 ```
 
-## 🛠️ Requirements
+## 🛠️ Requisitos
 
-- Go 1.21 or higher
-- Dependencies:
-  - `go.uber.org/zap` - Structured logging
-  - `go.uber.org/multierr` - Error handling
+- Go 1.21 ou superior
+- Dependências:
+  - `go.uber.org/zap` - Logging estruturado
+  - `go.uber.org/multierr` - Tratamento de erros
 
-## 🤝 Contributing
+## 🤝 Contribuindo
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+Contribuições são bem-vindas! Por favor, sinta-se à vontade para enviar um Pull Request.
 
-1. Fork the project
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+1. Faça fork do projeto
+2. Crie sua branch de feature (`git checkout -b feature/recurso-incrivel`)
+3. Commit suas mudanças (`git commit -m 'Adiciona algum recurso incrível'`)
+4. Push para a branch (`git push origin feature/recurso-incrivel`)
+5. Abra um Pull Request
 
-## 📄 License
+## 📄 Licença
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+Este projeto está licenciado sob a Licença MIT - veja o arquivo [LICENSE](LICENSE) para detalhes.
 
-## 🙏 Acknowledgments
+## 🙏 Agradecimentos
 
-- Inspired by popular web frameworks like Gin and Echo
-- Built with ❤️ and Go
-- Named after the Japanese word for "light" (光)
+- Inspirado por frameworks web populares como Gin e Echo
+- Construído com ❤️ e Go
+- Nomeado a partir da palavra japonesa para "luz" (光)
 
 ---
 
-**Hikari** - Fast, lightweight, and beautiful web framework for Go 🌅
+**Hikari** - Framework web rápido, leve e bonito para Go 🌅

@@ -1,27 +1,29 @@
 # User Management Example
 
-Sistema completo de gerenciamento de usuários com autenticação e autorização usando Hikari-Go.
+Complete user management system with authentication and authorization using Hikari-Go.
 
-## Características
+**Language / Idioma:** [English](README.md) | [Português Brasil](README.pt-BR.md)
 
-- Sistema de registro e login
-- Autenticação baseada em token
-- Autorização por roles (user/admin)
-- Middleware de autenticação personalizado
-- Endpoints protegidos
-- Validação de dados
-- Hash de senhas
+## Features
 
-## Como executar
+- Registration and login system
+- Token-based authentication
+- Role-based authorization (user/admin)
+- Custom authentication middleware
+- Protected endpoints
+- Data validation
+- Password hashing
+
+## How to run
 
 ```bash
 cd examples/user-management
 go run main.go
 ```
 
-O servidor será iniciado em `http://localhost:8081`
+The server will start at `http://localhost:8081`
 
-## Usuários Padrão
+## Default Users
 
 ### Admin
 - **Username:** `admin`
@@ -36,12 +38,12 @@ O servidor será iniciado em `http://localhost:8081`
 ## Endpoints
 
 ### GET /
-Informações sobre a API e lista de endpoints disponíveis.
+Information about the API and list of available endpoints.
 
-### Autenticação
+### Authentication
 
 #### POST /auth/register
-Registra um novo usuário.
+Registers a new user.
 
 **Body:**
 ```json
@@ -53,7 +55,7 @@ Registra um novo usuário.
 ```
 
 #### POST /auth/login
-Faz login de um usuário.
+Logs in a user.
 
 **Body:**
 ```json
@@ -78,17 +80,17 @@ Faz login de um usuário.
 ```
 
 #### POST /auth/logout
-Faz logout do usuário atual.
+Logs out the current user.
 
 **Headers:**
 ```
 Authorization: Bearer your-auth-token
 ```
 
-### Usuários (Requer Autenticação)
+### Users (Requires Authentication)
 
 #### GET /users
-Lista usuários ativos.
+Lists active users.
 
 **Headers:**
 ```
@@ -96,10 +98,10 @@ Authorization: Bearer your-auth-token
 ```
 
 #### GET /users/:id
-Obtém informações de um usuário específico.
+Gets information about a specific user.
 
 #### PUT /users/:id
-Atualiza um usuário (usuários só podem atualizar a si mesmos, exceto admins).
+Updates a user (users can only update themselves, except admins).
 
 **Body:**
 ```json
@@ -109,43 +111,43 @@ Atualiza um usuário (usuários só podem atualizar a si mesmos, exceto admins).
 ```
 
 #### DELETE /users/:id (Admin Only)
-Remove um usuário.
+Removes a user.
 
-### Perfil
+### Profile
 
 #### GET /profile
-Obtém o perfil do usuário atual.
+Gets the current user's profile.
 
 #### PUT /profile
-Atualiza o perfil do usuário atual.
+Updates the current user's profile.
 
-### Administração (Somente Admin)
+### Administration (Admin Only)
 
 #### GET /admin/users
-Lista todos os usuários (incluindo inativos).
+Lists all users (including inactive ones).
 
 #### PATCH /admin/users/:id/activate
-Ativa um usuário.
+Activates a user.
 
 #### PATCH /admin/users/:id/deactivate
-Desativa um usuário.
+Deactivates a user.
 
-## Exemplos de Uso
+## Usage Examples
 
-### 1. Fazer Login como Admin
+### 1. Login as Admin
 ```bash
 curl -X POST http://localhost:8081/auth/login \
   -H "Content-Type: application/json" \
   -d '{"username":"admin","password":"admin123"}'
 ```
 
-### 2. Listar Usuários (com token)
+### 2. List Users (with token)
 ```bash
 curl -H "Authorization: Bearer YOUR_TOKEN" \
   http://localhost:8081/users
 ```
 
-### 3. Registrar Novo Usuário
+### 3. Register New User
 ```bash
 curl -X POST http://localhost:8081/auth/register \
   -H "Content-Type: application/json" \
@@ -156,46 +158,46 @@ curl -X POST http://localhost:8081/auth/register \
   }'
 ```
 
-### 4. Ver Perfil
+### 4. View Profile
 ```bash
 curl -H "Authorization: Bearer YOUR_TOKEN" \
   http://localhost:8081/profile
 ```
 
-### 5. Listar Todos os Usuários (Admin)
+### 5. List All Users (Admin)
 ```bash
 curl -H "Authorization: Bearer ADMIN_TOKEN" \
   http://localhost:8081/admin/users
 ```
 
-## Funcionalidades Demonstradas
+## Demonstrated Features
 
-- **Authentication Middleware**: Verificação de tokens
-- **Authorization Middleware**: Controle por roles
-- **Password Hashing**: Uso do SHA-256 para senhas
-- **Session Management**: Gerenciamento simples de sessões
-- **Input Validation**: Validação de email e dados obrigatórios
-- **Error Handling**: Tratamento de erros e respostas apropriadas
-- **Route Protection**: Rotas protegidas por autenticação
-- **Role-based Access**: Controle de acesso baseado em roles
+- **Authentication Middleware**: Token verification
+- **Authorization Middleware**: Role-based control
+- **Password Hashing**: Using SHA-256 for passwords
+- **Session Management**: Simple session management
+- **Input Validation**: Email and required data validation
+- **Error Handling**: Error handling and appropriate responses
+- **Route Protection**: Routes protected by authentication
+- **Role-based Access**: Role-based access control
 
-## Estrutura de Segurança
+## Security Structure
 
-- Senhas são hasheadas com SHA-256
-- Tokens são gerados de forma única
-- Middleware de autenticação verifica tokens
-- Middleware de autorização verifica roles
-- Usuários inativos não podem fazer login
-- Validação de formato de email
-- Senhas devem ter pelo menos 6 caracteres
+- Passwords are hashed with SHA-256
+- Tokens are generated uniquely
+- Authentication middleware verifies tokens
+- Authorization middleware verifies roles
+- Inactive users cannot login
+- Email format validation
+- Passwords must be at least 6 characters
 
-## Notas de Implementação
+## Implementation Notes
 
-Este é um exemplo educacional. Para produção, considere:
+This is an educational example. For production, consider:
 
-- Usar um sistema de hash mais seguro (bcrypt)
-- Implementar JWT tokens
-- Usar banco de dados real
-- Adicionar rate limiting
-- Implementar refresh tokens
-- Adicionar logs de segurança
+- Using a more secure hashing system (bcrypt)
+- Implementing JWT tokens
+- Using a real database
+- Adding rate limiting
+- Implementing refresh tokens
+- Adding security logs
