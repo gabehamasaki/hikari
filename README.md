@@ -9,8 +9,9 @@
 - 🚀 **Lightweight and Fast** - Minimal overhead with maximum performance
 - 🛡️ **Built-in Recovery** - Automatic panic recovery to prevent crashes
 - 📝 **Structured Logging** - Beautiful colored logs with Uber's Zap logger
+- 🏗️ **Route Groups** - Organize routes with shared prefixes and middleware
 - 🔗 **Route Parameters** - Support for dynamic route parameters (`:param`) and wildcards (`*`)
-- 🧩 **Middleware Support** - Extensible middleware system (global and per-route)
+- 🧩 **Middleware Support** - Extensible middleware system (global, group, and per-route)
 - 🎯 **Context-based** - Rich context with JSON binding, query params, storage, and Go context interface
 - 🛑 **Graceful Shutdown** - Proper server shutdown handling with signals
 - 📊 **Request Logging** - Automatic contextual logging with timing and User-Agent
@@ -18,6 +19,8 @@
 - ⚙️ **Configured Timeouts** - Pre-configured read/write timeouts (5s) and configurable request timeouts
 - 💾 **Context Storage** - Built-in key-value storage system with thread-safe access
 - ⏱️ **Context Management** - Full Go context.Context interface support with cancellation and timeouts
+- 🔄 **Pattern Normalization** - Automatic route pattern cleanup and validation
+- 🎯 **API Versioning** - Built-in support for organized API structures
 
 ## 🚀 Quick Start
 
@@ -41,12 +44,24 @@ import (
 func main() {
     app := hikari.New(":8080")
 
-    app.GET("/hello/:name", func(c *hikari.Context) {
-        c.JSON(http.StatusOK, hikari.H{
-            "message": "Hello, " + c.Param("name") + "!",
-            "status":  "success",
+    // API v1 group
+    v1Group := app.Group("/api/v1")
+    {
+        v1Group.GET("/hello/:name", func(c *hikari.Context) {
+            c.JSON(http.StatusOK, hikari.H{
+                "message": "Hello, " + c.Param("name") + "!",
+                "status":  "success",
+            })
         })
-    })
+
+        // Health check
+        v1Group.GET("/health", func(c *hikari.Context) {
+            c.JSON(http.StatusOK, hikari.H{
+                "status": "healthy",
+                "service": "my-api",
+            })
+        })
+    }
 
     app.ListenAndServe()
 }
@@ -57,7 +72,7 @@ Run your application:
 go run main.go
 ```
 
-Visit `http://localhost:8080/hello/world` to see your app in action!
+Visit `http://localhost:8080/api/v1/hello/world` to see your app in action!
 
 ## 📚 Documentation
 
@@ -83,6 +98,308 @@ app.POST("/users", createUserHandler)
 app.PUT("/users/:id", updateUserHandler, authMiddleware, validationMiddleware)
 app.PATCH("/users/:id", patchUserHandler, authMiddleware)
 app.DELETE("/users/:id", deleteUserHandler, authMiddleware, adminMiddleware)
+```
+
+### Route Groups
+
+Organize your routes with shared prefixes and middleware using groups. This feature enables clean API structure and hierarchical middleware application:
+
+```go
+// Basic route group
+apiGroup := app.Group("/api")
+{
+    apiGroup.GET("/health", healthHandler)
+    apiGroup.GET("/version", versionHandler)
+}
+
+// Versioned API group
+v1Group := app.Group("/api/v1")
+{
+    // Users resource group
+    usersGroup := v1Group.Group("/users")
+    {
+        usersGroup.GET("/", listUsers)
+        usersGroup.POST("/", createUser)
+        usersGroup.GET("/:id", getUser)
+        usersGroup.PUT("/:id", updateUser)
+        usersGroup.DELETE("/:id", deleteUser)
+    }
+
+    // Posts resource group
+    postsGroup := v1Group.Group("/posts")
+    {
+        postsGroup.GET("/", listPosts)
+        postsGroup.POST("/", createPost)
+        postsGroup.GET("/:id", getPost)
+    }
+}
+```
+
+#### Groups with Middleware
+
+Apply middleware to entire groups for shared authentication, logging, or other concerns:
+
+```go
+// Global middleware
+app.Use(corsMiddleware)
+
+// API v1 with rate limiting
+v1Group := app.Group("/api/v1", rateLimitMiddleware)
+{
+    // Public endpoints (no additional middleware)
+    v1Group.GET("/health", healthHandler)
+
+    // Auth group - requires authentication
+    authGroup := v1Group.Group("/auth")
+    {
+        authGroup.POST("/login", loginHandler)
+        authGroup.POST("/register", registerHandler)
+        authGroup.POST("/logout", logoutHandler, authMiddleware)
+    }
+
+    // Protected group - requires authentication
+    protectedGroup := v1Group.Group("/protected", authMiddleware)
+    {
+        protectedGroup.GET("/profile", getProfile)
+        protectedGroup.PUT("/profile", updateProfile)
+
+        // Admin group - requires authentication + admin role
+        adminGroup := protectedGroup.Group("/admin", adminMiddleware)
+        {
+            adminGroup.GET("/users", adminListUsers)
+            adminGroup.DELETE("/users/:id", adminDeleteUser)
+            adminGroup.GET("/stats", adminGetStats)
+        }
+    }
+}
+```
+
+#### Nested Groups with Inherited Middleware
+
+Groups automatically inherit middleware from their parent groups:
+
+```go
+// Parent group with auth middleware
+apiGroup := app.Group("/api", authMiddleware)
+{
+    // Child group inherits auth + adds logging
+    v1Group := apiGroup.Group("/v1", loggingMiddleware)
+    {
+        // Grandchild inherits auth + logging + adds admin check
+        adminGroup := v1Group.Group("/admin", adminMiddleware)
+        {
+            // This endpoint has all 3 middlewares: auth -> logging -> admin
+            adminGroup.GET("/users", getUsersHandler)
+        }
+    }
+}
+```
+
+Results in route structure:
+- `/api/v1/admin/users` → authMiddleware → loggingMiddleware → adminMiddleware → getUsersHandler
+
+## 🛡️ Middleware System
+
+Hikari provides a powerful and flexible middleware system that supports multiple levels of application:
+
+### Global Middleware
+Apply to all routes across your entire application:
+
+```go
+app := hikari.New(":8080")
+
+// Global CORS middleware
+app.Use(func(next hikari.HandlerFunc) hikari.HandlerFunc {
+    return func(c *hikari.Context) {
+        c.SetHeader("Access-Control-Allow-Origin", "*")
+        c.SetHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+        c.SetHeader("Access-Control-Allow-Headers", "Content-Type, Authorization")
+        next(c)
+    }
+})
+```
+
+### Group Middleware
+Apply middleware to specific route groups:
+
+```go
+// API v1 with rate limiting
+v1Group := app.Group("/api/v1", RateLimitMiddleware())
+
+// Auth endpoints with security headers
+authGroup := v1Group.Group("/auth", SecurityHeadersMiddleware())
+
+// Admin routes with authentication + authorization
+adminGroup := v1Group.Group("/admin", AuthMiddleware(), AdminMiddleware())
+```
+
+### Route-Specific Middleware
+Apply middleware to individual routes:
+
+```go
+// Single middleware
+app.POST("/users", createUser, AuthMiddleware())
+
+// Multiple middleware (executed in order)
+app.DELETE("/users/:id", deleteUser,
+    AuthMiddleware(),
+    AdminMiddleware(),
+    AuditMiddleware())
+```
+
+### Middleware Execution Order
+
+Middleware executes in a predictable order:
+1. **Global middleware** (in registration order)
+2. **Parent group middleware** (outer to inner groups)
+3. **Current group middleware**
+4. **Route-specific middleware** (in parameter order)
+5. **Handler function**
+
+```go
+app.Use(GlobalMiddleware())                          // 1. Global
+
+apiGroup := app.Group("/api", APIMiddleware())       // 2. API group
+{
+    v1Group := apiGroup.Group("/v1", V1Middleware()) // 3. V1 group (inherits API)
+    {
+        // 4. Route-specific middleware
+        v1Group.POST("/users", createUser, AuthMiddleware(), ValidateMiddleware())
+    }
+}
+
+// Execution order: Global → API → V1 → Auth → Validate → createUser
+```
+
+### Common Middleware Examples
+
+#### Authentication Middleware
+```go
+func AuthMiddleware() hikari.Middleware {
+    return func(next hikari.HandlerFunc) hikari.HandlerFunc {
+        return func(c *hikari.Context) {
+            token := c.Request.Header.Get("Authorization")
+            if token == "" {
+                c.JSON(401, hikari.H{"error": "Missing authorization token"})
+                return
+            }
+
+            // Validate token
+            if user, valid := validateJWT(token); valid {
+                c.Set("user", user)
+                c.Set("authenticated", true)
+                next(c)
+            } else {
+                c.JSON(401, hikari.H{"error": "Invalid token"})
+            }
+        }
+    }
+}
+```
+
+#### Rate Limiting Middleware
+```go
+func RateLimitMiddleware(requestsPerMinute int) hikari.Middleware {
+    limiter := make(map[string][]time.Time)
+    mutex := sync.RWMutex{}
+
+    return func(next hikari.HandlerFunc) hikari.HandlerFunc {
+        return func(c *hikari.Context) {
+            ip := c.ClientIP()
+            now := time.Now()
+
+            mutex.Lock()
+            defer mutex.Unlock()
+
+            // Clean old requests
+            requests := limiter[ip]
+            var validRequests []time.Time
+            for _, reqTime := range requests {
+                if now.Sub(reqTime) < time.Minute {
+                    validRequests = append(validRequests, reqTime)
+                }
+            }
+
+            if len(validRequests) >= requestsPerMinute {
+                c.JSON(429, hikari.H{
+                    "error": "Rate limit exceeded",
+                    "retry_after": 60,
+                })
+                return
+            }
+
+            limiter[ip] = append(validRequests, now)
+            next(c)
+        }
+    }
+}
+```
+
+#### Request ID Middleware
+```go
+func RequestIDMiddleware() hikari.Middleware {
+    return func(next hikari.HandlerFunc) hikari.HandlerFunc {
+        return func(c *hikari.Context) {
+            requestID := c.Request.Header.Get("X-Request-ID")
+            if requestID == "" {
+                requestID = generateUUID() // Your UUID generation function
+            }
+
+            c.Set("request_id", requestID)
+            c.SetHeader("X-Request-ID", requestID)
+
+            // Add to logger context
+            c.Logger = c.Logger.With(zap.String("request_id", requestID))
+
+            next(c)
+        }
+    }
+}
+```
+
+#### Recovery Middleware
+```go
+func RecoveryMiddleware() hikari.Middleware {
+    return func(next hikari.HandlerFunc) hikari.HandlerFunc {
+        return func(c *hikari.Context) {
+            defer func() {
+                if err := recover(); err != nil {
+                    c.Logger.Error("Panic recovered",
+                        zap.Any("error", err),
+                        zap.String("path", c.Path()),
+                        zap.String("method", c.Method()))
+
+                    c.JSON(500, hikari.H{
+                        "error": "Internal server error",
+                        "request_id": c.GetString("request_id"),
+                    })
+                }
+            }()
+            next(c)
+        }
+    }
+}
+```
+
+### Conditional Middleware
+
+Apply middleware based on conditions:
+
+```go
+func ConditionalAuth() hikari.Middleware {
+    return func(next hikari.HandlerFunc) hikari.HandlerFunc {
+        return func(c *hikari.Context) {
+            // Skip auth for health checks
+            if c.Path() == "/health" || c.Path() == "/ping" {
+                next(c)
+                return
+            }
+
+            // Apply authentication for other routes
+            AuthMiddleware()(next)(c)
+        }
+    }
+}
 ```
 
 ### Route Parameters
@@ -252,7 +569,7 @@ default:
 
 ### Middleware
 
-Create and use custom middleware - applicable globally or per specific route:
+Create and use custom middleware - applicable globally, to route groups, or per specific route:
 
 ```go
 // CORS middleware example
@@ -282,19 +599,77 @@ func AuthMiddleware() hikari.Middleware {
                 c.JSON(http.StatusUnauthorized, hikari.H{"error": "Token required"})
                 return
             }
+
+            // Store user info for later use
+            c.Set("authenticated", true)
+            c.Set("user_id", extractUserID(token))
             next(c)
         }
     }
 }
 
-// Use middleware globally (applies to all routes)
-app.Use(CORSMiddleware())
-app.Use(AuthMiddleware())
+// Rate limiting middleware
+func RateLimitMiddleware() hikari.Middleware {
+    return func(next hikari.HandlerFunc) hikari.HandlerFunc {
+        return func(c *hikari.Context) {
+            // Rate limiting logic here
+            c.Logger.Info("Rate limit check passed")
+            next(c)
+        }
+    }
+}
+```
 
-// Use route-specific middleware
+#### Middleware Application Levels
+
+```go
+// 1. Global middleware (applies to ALL routes)
+app.Use(CORSMiddleware())
+app.Use(loggingMiddleware)
+
+// 2. Group middleware (applies to all routes in the group)
+apiGroup := app.Group("/api", RateLimitMiddleware())
+{
+    // All routes here have rate limiting
+
+    protectedGroup := apiGroup.Group("/protected", AuthMiddleware())
+    {
+        // All routes here have rate limiting + authentication
+
+        adminGroup := protectedGroup.Group("/admin", AdminMiddleware())
+        {
+            // All routes here have: rate limiting + auth + admin check
+            adminGroup.GET("/users", getUsersHandler)
+        }
+    }
+}
+
+// 3. Route-specific middleware (applies only to specific route)
 app.GET("/public", publicHandler) // No middleware
-app.GET("/protected", protectedHandler, AuthMiddleware()) // Only auth
-app.POST("/admin", adminHandler, AuthMiddleware(), AdminMiddleware()) // Multiple middlewares
+app.GET("/auth-only", protectedHandler, AuthMiddleware()) // Only auth
+app.POST("/admin-only", adminHandler, AuthMiddleware(), AdminMiddleware()) // Multiple middlewares
+```
+
+#### Middleware Execution Order
+
+Middleware executes in the order they are applied:
+
+```go
+// Global middleware first
+app.Use(middleware1) // Executes 1st
+app.Use(middleware2) // Executes 2nd
+
+// Then group middleware (outer to inner)
+groupA := app.Group("/api", middleware3) // Executes 3rd
+{
+    groupB := groupA.Group("/v1", middleware4) // Executes 4th
+    {
+        // Finally route-specific middleware
+        groupB.GET("/users", handler, middleware5) // Executes 5th, then handler
+    }
+}
+
+// Execution order: middleware1 → middleware2 → middleware3 → middleware4 → middleware5 → handler
 ```
 
 #### Middleware with Context Storage
@@ -386,7 +761,7 @@ your-project/
         └── posts.go
 ```
 
-## 📝 Example: Complete RESTful API
+## 📝 Example: Complete RESTful API with Route Groups
 
 ```go
 package main
@@ -394,6 +769,7 @@ package main
 import (
     "net/http"
     "strconv"
+    "time"
     "github.com/gabehamasaki/hikari-go/pkg/hikari"
     "go.uber.org/zap"
 )
@@ -409,7 +785,7 @@ var users = []User{
     {ID: 2, Name: "Jane Smith", Email: "jane@example.com"},
 }
 
-// Simple authentication middleware
+// Middleware functions
 func AuthMiddleware() hikari.Middleware {
     return func(next hikari.HandlerFunc) hikari.HandlerFunc {
         return func(c *hikari.Context) {
@@ -419,7 +795,41 @@ func AuthMiddleware() hikari.Middleware {
                     "error": "Invalid or missing token"})
                 return
             }
+
+            // Store auth info in context
+            c.Set("authenticated", true)
+            c.Set("user_role", "user")
             next(c)
+        }
+    }
+}
+
+func AdminMiddleware() hikari.Middleware {
+    return func(next hikari.HandlerFunc) hikari.HandlerFunc {
+        return func(c *hikari.Context) {
+            role := c.GetString("user_role")
+            if role != "admin" {
+                c.JSON(http.StatusForbidden, hikari.H{
+                    "error": "Admin access required"})
+                return
+            }
+            next(c)
+        }
+    }
+}
+
+func LoggingMiddleware() hikari.Middleware {
+    return func(next hikari.HandlerFunc) hikari.HandlerFunc {
+        return func(c *hikari.Context) {
+            start := time.Now()
+            next(c)
+            duration := time.Since(start)
+
+            c.Logger.Info("Request processed",
+                zap.String("method", c.Method()),
+                zap.String("path", c.Path()),
+                zap.Duration("duration", duration),
+                zap.Int("status", c.GetStatus()))
         }
     }
 }
@@ -434,58 +844,128 @@ func main() {
     app.Use(func(next hikari.HandlerFunc) hikari.HandlerFunc {
         return func(c *hikari.Context) {
             c.SetHeader("Content-Type", "application/json")
-            // Store request start time for timing
-            c.Set("start_time", time.Now())
+            c.SetHeader("Access-Control-Allow-Origin", "*")
             next(c)
         }
     })
 
-    // Public routes
+    // Root endpoint
     app.GET("/", func(c *hikari.Context) {
         c.JSON(http.StatusOK, hikari.H{
-            "message": "Hikari API is running!",
+            "message": "Hikari API with Route Groups",
             "version": "1.0.0",
+            "endpoints": hikari.H{
+                "health":  "/health",
+                "api_v1":  "/api/v1",
+                "admin":   "/api/v1/admin",
+            },
         })
     })
 
-    app.GET("/users", getUsers)
-    app.GET("/users/:id", getUser)
-
-    // Protected routes (with specific middleware)
-    app.POST("/users", createUser, AuthMiddleware())
-    app.PUT("/users/:id", updateUser, AuthMiddleware())
-    app.DELETE("/users/:id", deleteUser, AuthMiddleware())
-
-    // Wildcard route for serving files
-    app.GET("/files/*", func(c *hikari.Context) {
-        filepath := c.Wildcard()
-        c.Logger.Info("Serving file", zap.String("file", filepath))
-        c.File("./static/" + filepath)
-    })
-
-    // Text response route
+    // Health check (public)
     app.GET("/health", func(c *hikari.Context) {
-        c.String(http.StatusOK, "OK - Server is running perfectly!")
+        c.JSON(http.StatusOK, hikari.H{
+            "status": "healthy",
+            "timestamp": time.Now().Format(time.RFC3339),
+        })
     })
 
-    // Context timeout example
-    app.GET("/slow", func(c *hikari.Context) {
-        // Create a context with 2 second timeout
-        ctx, cancel := c.WithTimeout(2 * time.Second)
-        defer cancel()
+    // API v1 group with logging
+    v1Group := app.Group("/api/v1", LoggingMiddleware())
+    {
+        // API info
+        v1Group.GET("/", func(c *hikari.Context) {
+            c.JSON(http.StatusOK, hikari.H{
+                "message": "Welcome to API v1",
+                "version": "1.0.0",
+                "endpoints": hikari.H{
+                    "users": "/api/v1/users",
+                    "auth":  "/api/v1/auth",
+                    "admin": "/api/v1/admin",
+                },
+            })
+        })
 
-        // Simulate slow operation
-        select {
-        case <-time.After(1 * time.Second):
-            c.JSON(http.StatusOK, hikari.H{"message": "Operation completed"})
-        case <-ctx.Done():
-            c.JSON(http.StatusRequestTimeout, hikari.H{"error": "Operation timed out"})
+        // Public users endpoints (read-only)
+        usersGroup := v1Group.Group("/users")
+        {
+            usersGroup.GET("/", getUsers)
+            usersGroup.GET("/:id", getUser)
         }
+
+        // Auth endpoints
+        authGroup := v1Group.Group("/auth")
+        {
+            authGroup.POST("/login", func(c *hikari.Context) {
+                // Simplified login
+                c.JSON(http.StatusOK, hikari.H{
+                    "token": "Bearer valid-token",
+                    "message": "Login successful",
+                })
+            })
+
+            // Logout requires authentication
+            authGroup.POST("/logout", func(c *hikari.Context) {
+                c.JSON(http.StatusOK, hikari.H{
+                    "message": "Logout successful",
+                })
+            }, AuthMiddleware())
+        }
+
+        // Protected endpoints (require authentication)
+        protectedGroup := v1Group.Group("/protected", AuthMiddleware())
+        {
+            protectedGroup.GET("/profile", func(c *hikari.Context) {
+                c.JSON(http.StatusOK, hikari.H{
+                    "message": "Protected profile data",
+                    "authenticated": c.GetBool("authenticated"),
+                })
+            })
+
+            // User management (authenticated users can modify)
+            userMgmtGroup := protectedGroup.Group("/users")
+            {
+                userMgmtGroup.POST("/", createUser)
+                userMgmtGroup.PUT("/:id", updateUser)
+            }
+        }
+
+        // Admin endpoints (require authentication + admin role)
+        adminGroup := v1Group.Group("/admin", AuthMiddleware(), AdminMiddleware())
+        {
+            adminGroup.GET("/stats", func(c *hikari.Context) {
+                c.JSON(http.StatusOK, hikari.H{
+                    "total_users": len(users),
+                    "admin_access": true,
+                    "timestamp": time.Now(),
+                })
+            })
+
+            // Admin user management
+            adminUsersGroup := adminGroup.Group("/users")
+            {
+                adminUsersGroup.GET("/", func(c *hikari.Context) {
+                    c.JSON(http.StatusOK, hikari.H{
+                        "users": users,
+                        "admin_view": true,
+                    })
+                })
+                adminUsersGroup.DELETE("/:id", deleteUser)
+            }
+        }
+    }
+
+    // Static file serving
+    app.GET("/static/*", func(c *hikari.Context) {
+        filepath := c.Wildcard()
+        c.Logger.Info("Serving static file", zap.String("file", filepath))
+        c.File("./static/" + filepath)
     })
 
     app.ListenAndServe()
 }
 
+// Handler functions
 func getUsers(c *hikari.Context) {
     c.JSON(http.StatusOK, hikari.H{
         "data": users,
@@ -570,6 +1050,38 @@ func deleteUser(c *hikari.Context) {
     c.JSON(http.StatusNotFound, hikari.H{"error": "User not found"})
 }
 ```
+
+This example demonstrates:
+
+### 🏗️ Route Structure
+```
+/                           → Root API info
+/health                     → Health check
+/api/v1/                    → API v1 info
+├── /users/                 → Public user operations
+│   ├── GET /               → List users
+│   └── GET /:id            → Get user
+├── /auth/                  → Authentication
+│   ├── POST /login         → Login
+│   └── POST /logout        → Logout [AUTH]
+├── /protected/             → Protected operations [AUTH]
+│   ├── GET /profile        → User profile
+│   └── /users/             → User management
+│       ├── POST /          → Create user
+│       └── PUT /:id        → Update user
+└── /admin/                 → Admin operations [AUTH + ADMIN]
+    ├── GET /stats          → System stats
+    └── /users/             → Admin user management
+        ├── GET /           → List all users (admin view)
+        └── DELETE /:id     → Delete user
+/static/*                   → Static file serving
+```
+
+### 🔧 Middleware Hierarchy
+- **Global**: CORS, Content-Type
+- **v1Group**: Logging middleware
+- **protectedGroup**: Authentication middleware (inherits logging)
+- **adminGroup**: Authentication + Admin middleware (inherits logging)
 
 ## 🛠️ Requirements
 
