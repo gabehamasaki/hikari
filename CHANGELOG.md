@@ -77,7 +77,7 @@ pkg/hikari/
 
 examples/
 ├── todo-app/          # Updated with route groups
-├── user-management/   # Updated with route groups  
+├── user-management/   # Updated with route groups
 ├── file-upload/       # Updated with route groups
 └── ...
 ```
@@ -89,7 +89,7 @@ examples/
 v1Group := app.Group("/api/v1")
 {
     v1Group.GET("/health", healthHandler)
-    
+
     usersGroup := v1Group.Group("/users")
     {
         usersGroup.GET("/", getUsers)
