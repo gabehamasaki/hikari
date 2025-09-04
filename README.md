@@ -6,7 +6,7 @@
 
 ## 📖 Documentation
 
-**🌐 [hikari-go.dev](https://gabehamasaki.github.io/hikari-go/)**
+**🌐 [hikari-go.dev](https://gabehamasaki.github.io/hikari-docs/)**
 
 Visit our comprehensive documentation for detailed guides, examples, and API reference.
 
