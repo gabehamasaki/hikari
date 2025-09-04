@@ -78,10 +78,10 @@ func main() {
 }
 
 func homePage(c *hikari.Context) {
-	c.JSON(http.StatusOK, map[string]interface{}{
+	c.JSON(http.StatusOK, hikari.H{
 		"message": "User Management API",
 		"version": "1.0.0",
-		"endpoints": map[string]string{
+		"endpoints": hikari.H{
 			"POST /auth/register":               "Register new user",
 			"POST /auth/login":                  "Login user",
 			"POST /auth/logout":                 "Logout user",
@@ -101,7 +101,7 @@ func homePage(c *hikari.Context) {
 func register(c *hikari.Context) {
 	var req RegisterRequest
 	if err := c.Bind(&req); err != nil {
-		c.JSON(http.StatusBadRequest, map[string]string{
+		c.JSON(http.StatusBadRequest, hikari.H{
 			"error": "Invalid JSON data",
 		})
 		return
@@ -109,21 +109,21 @@ func register(c *hikari.Context) {
 
 	// Validate input
 	if req.Username == "" || req.Email == "" || req.Password == "" {
-		c.JSON(http.StatusBadRequest, map[string]string{
+		c.JSON(http.StatusBadRequest, hikari.H{
 			"error": "Username, email and password are required",
 		})
 		return
 	}
 
 	if !isValidEmail(req.Email) {
-		c.JSON(http.StatusBadRequest, map[string]string{
+		c.JSON(http.StatusBadRequest, hikari.H{
 			"error": "Invalid email format",
 		})
 		return
 	}
 
 	if len(req.Password) < 6 {
-		c.JSON(http.StatusBadRequest, map[string]string{
+		c.JSON(http.StatusBadRequest, hikari.H{
 			"error": "Password must be at least 6 characters",
 		})
 		return
@@ -132,7 +132,7 @@ func register(c *hikari.Context) {
 	// Check if user already exists
 	for _, user := range users {
 		if user.Username == req.Username || user.Email == req.Email {
-			c.JSON(http.StatusConflict, map[string]string{
+			c.JSON(http.StatusConflict, hikari.H{
 				"error": "Username or email already exists",
 			})
 			return
@@ -154,9 +154,9 @@ func register(c *hikari.Context) {
 	users = append(users, user)
 	nextUserID++
 
-	c.JSON(http.StatusCreated, map[string]interface{}{
+	c.JSON(http.StatusCreated, hikari.H{
 		"message": "User created successfully",
-		"user": map[string]interface{}{
+		"user": hikari.H{
 			"id":       user.ID,
 			"username": user.Username,
 			"email":    user.Email,
@@ -168,7 +168,7 @@ func register(c *hikari.Context) {
 func login(c *hikari.Context) {
 	var req LoginRequest
 	if err := c.Bind(&req); err != nil {
-		c.JSON(http.StatusBadRequest, map[string]string{
+		c.JSON(http.StatusBadRequest, hikari.H{
 			"error": "Invalid JSON data",
 		})
 		return
@@ -179,7 +179,7 @@ func login(c *hikari.Context) {
 	for i, user := range users {
 		if user.Username == req.Username && user.Password == hashPassword(req.Password) {
 			if !user.Active {
-				c.JSON(http.StatusForbidden, map[string]string{
+				c.JSON(http.StatusForbidden, hikari.H{
 					"error": "Account is deactivated",
 				})
 				return
@@ -190,7 +190,7 @@ func login(c *hikari.Context) {
 	}
 
 	if foundUser == nil {
-		c.JSON(http.StatusUnauthorized, map[string]string{
+		c.JSON(http.StatusUnauthorized, hikari.H{
 			"error": "Invalid credentials",
 		})
 		return
@@ -200,10 +200,10 @@ func login(c *hikari.Context) {
 	token := generateToken(foundUser.Username)
 	sessions[token] = foundUser
 
-	c.JSON(http.StatusOK, map[string]interface{}{
+	c.JSON(http.StatusOK, hikari.H{
 		"message": "Login successful",
 		"token":   token,
-		"user": map[string]interface{}{
+		"user": hikari.H{
 			"id":       foundUser.ID,
 			"username": foundUser.Username,
 			"email":    foundUser.Email,
@@ -218,16 +218,16 @@ func logout(c *hikari.Context) {
 		delete(sessions, token)
 	}
 
-	c.JSON(http.StatusOK, map[string]string{
+	c.JSON(http.StatusOK, hikari.H{
 		"message": "Logout successful",
 	})
 }
 
 func getUsers(c *hikari.Context) {
-	var publicUsers []map[string]interface{}
+	var publicUsers []hikari.H
 	for _, user := range users {
 		if user.Active {
-			publicUsers = append(publicUsers, map[string]interface{}{
+			publicUsers = append(publicUsers, hikari.H{
 				"id":         user.ID,
 				"username":   user.Username,
 				"email":      user.Email,
@@ -237,7 +237,7 @@ func getUsers(c *hikari.Context) {
 		}
 	}
 
-	c.JSON(http.StatusOK, map[string]interface{}{
+	c.JSON(http.StatusOK, hikari.H{
 		"users": publicUsers,
 		"count": len(publicUsers),
 	})
@@ -246,7 +246,7 @@ func getUsers(c *hikari.Context) {
 func getUser(c *hikari.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, map[string]string{
+		c.JSON(http.StatusBadRequest, hikari.H{
 			"error": "Invalid user ID",
 		})
 		return
@@ -254,7 +254,7 @@ func getUser(c *hikari.Context) {
 
 	for _, user := range users {
 		if user.ID == id && user.Active {
-			c.JSON(http.StatusOK, map[string]interface{}{
+			c.JSON(http.StatusOK, hikari.H{
 				"id":         user.ID,
 				"username":   user.Username,
 				"email":      user.Email,
@@ -266,7 +266,7 @@ func getUser(c *hikari.Context) {
 		}
 	}
 
-	c.JSON(http.StatusNotFound, map[string]string{
+	c.JSON(http.StatusNotFound, hikari.H{
 		"error": "User not found",
 	})
 }
@@ -275,7 +275,7 @@ func updateUser(c *hikari.Context) {
 	currentUser := getCurrentUser(c)
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, map[string]string{
+		c.JSON(http.StatusBadRequest, hikari.H{
 			"error": "Invalid user ID",
 		})
 		return
@@ -283,7 +283,7 @@ func updateUser(c *hikari.Context) {
 
 	// Users can only update themselves, unless they are admin
 	if currentUser.Role != "admin" && currentUser.ID != id {
-		c.JSON(http.StatusForbidden, map[string]string{
+		c.JSON(http.StatusForbidden, hikari.H{
 			"error": "You can only update your own profile",
 		})
 		return
@@ -294,7 +294,7 @@ func updateUser(c *hikari.Context) {
 	}
 
 	if err := c.Bind(&updateData); err != nil {
-		c.JSON(http.StatusBadRequest, map[string]string{
+		c.JSON(http.StatusBadRequest, hikari.H{
 			"error": "Invalid JSON data",
 		})
 		return
@@ -307,9 +307,9 @@ func updateUser(c *hikari.Context) {
 			}
 			users[i].UpdatedAt = time.Now()
 
-			c.JSON(http.StatusOK, map[string]interface{}{
+			c.JSON(http.StatusOK, hikari.H{
 				"message": "User updated successfully",
-				"user": map[string]interface{}{
+				"user": hikari.H{
 					"id":       users[i].ID,
 					"username": users[i].Username,
 					"email":    users[i].Email,
@@ -320,7 +320,7 @@ func updateUser(c *hikari.Context) {
 		}
 	}
 
-	c.JSON(http.StatusNotFound, map[string]string{
+	c.JSON(http.StatusNotFound, hikari.H{
 		"error": "User not found",
 	})
 }
@@ -328,7 +328,7 @@ func updateUser(c *hikari.Context) {
 func deleteUser(c *hikari.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, map[string]string{
+		c.JSON(http.StatusBadRequest, hikari.H{
 			"error": "Invalid user ID",
 		})
 		return
@@ -337,21 +337,21 @@ func deleteUser(c *hikari.Context) {
 	for i, user := range users {
 		if user.ID == id {
 			users = append(users[:i], users[i+1:]...)
-			c.JSON(http.StatusOK, map[string]string{
+			c.JSON(http.StatusOK, hikari.H{
 				"message": "User deleted successfully",
 			})
 			return
 		}
 	}
 
-	c.JSON(http.StatusNotFound, map[string]string{
+	c.JSON(http.StatusNotFound, hikari.H{
 		"error": "User not found",
 	})
 }
 
 func getProfile(c *hikari.Context) {
 	user := getCurrentUser(c)
-	c.JSON(http.StatusOK, map[string]interface{}{
+	c.JSON(http.StatusOK, hikari.H{
 		"id":         user.ID,
 		"username":   user.Username,
 		"email":      user.Email,
@@ -370,7 +370,7 @@ func updateProfile(c *hikari.Context) {
 	}
 
 	if err := c.Bind(&updateData); err != nil {
-		c.JSON(http.StatusBadRequest, map[string]string{
+		c.JSON(http.StatusBadRequest, hikari.H{
 			"error": "Invalid JSON data",
 		})
 		return
@@ -383,9 +383,9 @@ func updateProfile(c *hikari.Context) {
 			}
 			users[i].UpdatedAt = time.Now()
 
-			c.JSON(http.StatusOK, map[string]interface{}{
+			c.JSON(http.StatusOK, hikari.H{
 				"message": "Profile updated successfully",
-				"user": map[string]interface{}{
+				"user": hikari.H{
 					"id":       users[i].ID,
 					"username": users[i].Username,
 					"email":    users[i].Email,
@@ -398,9 +398,9 @@ func updateProfile(c *hikari.Context) {
 }
 
 func adminGetUsers(c *hikari.Context) {
-	var allUsers []map[string]interface{}
+	var allUsers []hikari.H
 	for _, user := range users {
-		allUsers = append(allUsers, map[string]interface{}{
+		allUsers = append(allUsers, hikari.H{
 			"id":         user.ID,
 			"username":   user.Username,
 			"email":      user.Email,
@@ -411,7 +411,7 @@ func adminGetUsers(c *hikari.Context) {
 		})
 	}
 
-	c.JSON(http.StatusOK, map[string]interface{}{
+	c.JSON(http.StatusOK, hikari.H{
 		"users": allUsers,
 		"count": len(allUsers),
 	})
@@ -420,7 +420,7 @@ func adminGetUsers(c *hikari.Context) {
 func activateUser(c *hikari.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, map[string]string{
+		c.JSON(http.StatusBadRequest, hikari.H{
 			"error": "Invalid user ID",
 		})
 		return
@@ -430,14 +430,14 @@ func activateUser(c *hikari.Context) {
 		if user.ID == id {
 			users[i].Active = true
 			users[i].UpdatedAt = time.Now()
-			c.JSON(http.StatusOK, map[string]string{
+			c.JSON(http.StatusOK, hikari.H{
 				"message": "User activated successfully",
 			})
 			return
 		}
 	}
 
-	c.JSON(http.StatusNotFound, map[string]string{
+	c.JSON(http.StatusNotFound, hikari.H{
 		"error": "User not found",
 	})
 }
@@ -445,7 +445,7 @@ func activateUser(c *hikari.Context) {
 func deactivateUser(c *hikari.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, map[string]string{
+		c.JSON(http.StatusBadRequest, hikari.H{
 			"error": "Invalid user ID",
 		})
 		return
@@ -455,14 +455,14 @@ func deactivateUser(c *hikari.Context) {
 		if user.ID == id {
 			users[i].Active = false
 			users[i].UpdatedAt = time.Now()
-			c.JSON(http.StatusOK, map[string]string{
+			c.JSON(http.StatusOK, hikari.H{
 				"message": "User deactivated successfully",
 			})
 			return
 		}
 	}
 
-	c.JSON(http.StatusNotFound, map[string]string{
+	c.JSON(http.StatusNotFound, hikari.H{
 		"error": "User not found",
 	})
 }
@@ -472,7 +472,7 @@ func authMiddleware(next hikari.HandlerFunc) hikari.HandlerFunc {
 	return func(c *hikari.Context) {
 		token := getTokenFromRequest(c)
 		if token == "" {
-			c.JSON(http.StatusUnauthorized, map[string]string{
+			c.JSON(http.StatusUnauthorized, hikari.H{
 				"error": "Authentication required",
 			})
 			return
@@ -480,7 +480,7 @@ func authMiddleware(next hikari.HandlerFunc) hikari.HandlerFunc {
 
 		user, exists := sessions[token]
 		if !exists || !user.Active {
-			c.JSON(http.StatusUnauthorized, map[string]string{
+			c.JSON(http.StatusUnauthorized, hikari.H{
 				"error": "Invalid or expired token",
 			})
 			return
@@ -499,7 +499,7 @@ func adminMiddleware(next hikari.HandlerFunc) hikari.HandlerFunc {
 	return func(c *hikari.Context) {
 		user := getCurrentUser(c)
 		if user.Role != "admin" {
-			c.JSON(http.StatusForbidden, map[string]string{
+			c.JSON(http.StatusForbidden, hikari.H{
 				"error": "Admin access required",
 			})
 			return

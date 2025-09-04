@@ -22,7 +22,7 @@ func NewRouter() *Router {
 	}
 }
 
-func (r *Router) Handle(method, pattern string, handler HandlerFunc, middlewares ...Middleware) {
+func (r *Router) handle(method, pattern string, handler HandlerFunc, middlewares ...Middleware) {
 	r.routes = append(r.routes, route{
 		method:      method,
 		pattern:     pattern,
@@ -40,7 +40,7 @@ func splitPath(p string) []string {
 	return strings.Split(p, "/")
 }
 
-func (r *Router) ServeContext(ctx *Context) {
+func (r *Router) serveContext(ctx *Context) {
 	for _, rt := range r.routes {
 		if rt.method != ctx.Request.Method {
 			continue

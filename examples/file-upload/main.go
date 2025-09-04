@@ -69,7 +69,7 @@ func main() {
 }
 
 func homePage(c *hikari.Context) {
-	c.JSON(http.StatusOK, map[string]interface{}{
+	c.JSON(http.StatusOK, hikari.H{
 		"message": "File Upload API",
 		"version": "1.0.0",
 		"features": []string{
@@ -80,7 +80,7 @@ func homePage(c *hikari.Context) {
 			"File deletion",
 			"Static file serving",
 		},
-		"endpoints": map[string]string{
+		"endpoints": hikari.H{
 			"POST /upload":          "Upload single file",
 			"POST /upload/multiple": "Upload multiple files",
 			"GET /files":            "List all files",
@@ -97,7 +97,7 @@ func uploadFile(c *hikari.Context) {
 	// Parse multipart form with max memory of 10MB
 	err := c.Request.ParseMultipartForm(10 << 20) // 10MB
 	if err != nil {
-		c.JSON(http.StatusBadRequest, map[string]string{
+		c.JSON(http.StatusBadRequest, hikari.H{
 			"error": "Unable to parse form",
 		})
 		return
@@ -105,7 +105,7 @@ func uploadFile(c *hikari.Context) {
 
 	file, header, err := c.Request.FormFile("file")
 	if err != nil {
-		c.JSON(http.StatusBadRequest, map[string]string{
+		c.JSON(http.StatusBadRequest, hikari.H{
 			"error": "No file uploaded or invalid file",
 		})
 		return
@@ -114,7 +114,7 @@ func uploadFile(c *hikari.Context) {
 
 	// Validate file size (max 10MB)
 	if header.Size > 10<<20 {
-		c.JSON(http.StatusBadRequest, map[string]string{
+		c.JSON(http.StatusBadRequest, hikari.H{
 			"error": "File too large (max 10MB)",
 		})
 		return
@@ -123,7 +123,7 @@ func uploadFile(c *hikari.Context) {
 	// Validate file type (basic validation)
 	contentType := header.Header.Get("Content-Type")
 	if !isAllowedFileType(contentType) {
-		c.JSON(http.StatusBadRequest, map[string]string{
+		c.JSON(http.StatusBadRequest, hikari.H{
 			"error": "File type not allowed",
 		})
 		return
@@ -138,7 +138,7 @@ func uploadFile(c *hikari.Context) {
 	// Create destination file
 	dst, err := os.Create(filePath)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, map[string]string{
+		c.JSON(http.StatusInternalServerError, hikari.H{
 			"error": "Unable to create file",
 		})
 		return
@@ -148,7 +148,7 @@ func uploadFile(c *hikari.Context) {
 	// Copy uploaded file to destination
 	size, err := io.Copy(dst, file)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, map[string]string{
+		c.JSON(http.StatusInternalServerError, hikari.H{
 			"error": "Unable to save file",
 		})
 		return
@@ -165,7 +165,7 @@ func uploadFile(c *hikari.Context) {
 	}
 	files[fileID] = fileInfo
 
-	c.JSON(http.StatusCreated, map[string]interface{}{
+	c.JSON(http.StatusCreated, hikari.H{
 		"message":      "File uploaded successfully",
 		"file":         fileInfo,
 		"download_url": fmt.Sprintf("/download/%s", fileID),
@@ -177,7 +177,7 @@ func uploadMultipleFiles(c *hikari.Context) {
 	// Parse multipart form with max memory of 50MB
 	err := c.Request.ParseMultipartForm(50 << 20) // 50MB total
 	if err != nil {
-		c.JSON(http.StatusBadRequest, map[string]string{
+		c.JSON(http.StatusBadRequest, hikari.H{
 			"error": "Unable to parse form",
 		})
 		return
@@ -187,19 +187,19 @@ func uploadMultipleFiles(c *hikari.Context) {
 	uploadedFiles := form.File["files"]
 
 	if len(uploadedFiles) == 0 {
-		c.JSON(http.StatusBadRequest, map[string]string{
+		c.JSON(http.StatusBadRequest, hikari.H{
 			"error": "No files uploaded",
 		})
 		return
 	}
 
-	var results []map[string]interface{}
-	var errors []map[string]string
+	var results []hikari.H
+	var errors []hikari.H
 
 	for i, header := range uploadedFiles {
 		file, err := header.Open()
 		if err != nil {
-			errors = append(errors, map[string]string{
+			errors = append(errors, hikari.H{
 				"file":  header.Filename,
 				"error": "Unable to open file",
 			})
@@ -209,7 +209,7 @@ func uploadMultipleFiles(c *hikari.Context) {
 		// Validate file size
 		if header.Size > 10<<20 {
 			file.Close()
-			errors = append(errors, map[string]string{
+			errors = append(errors, hikari.H{
 				"file":  header.Filename,
 				"error": "File too large (max 10MB)",
 			})
@@ -220,7 +220,7 @@ func uploadMultipleFiles(c *hikari.Context) {
 		contentType := header.Header.Get("Content-Type")
 		if !isAllowedFileType(contentType) {
 			file.Close()
-			errors = append(errors, map[string]string{
+			errors = append(errors, hikari.H{
 				"file":  header.Filename,
 				"error": "File type not allowed",
 			})
@@ -237,7 +237,7 @@ func uploadMultipleFiles(c *hikari.Context) {
 		dst, err := os.Create(filePath)
 		if err != nil {
 			file.Close()
-			errors = append(errors, map[string]string{
+			errors = append(errors, hikari.H{
 				"file":  header.Filename,
 				"error": "Unable to create file",
 			})
@@ -251,7 +251,7 @@ func uploadMultipleFiles(c *hikari.Context) {
 
 		if err != nil {
 			os.Remove(filePath) // Clean up on error
-			errors = append(errors, map[string]string{
+			errors = append(errors, hikari.H{
 				"file":  header.Filename,
 				"error": "Unable to save file",
 			})
@@ -269,14 +269,14 @@ func uploadMultipleFiles(c *hikari.Context) {
 		}
 		files[fileID] = fileInfo
 
-		results = append(results, map[string]interface{}{
+		results = append(results, hikari.H{
 			"file":         fileInfo,
 			"download_url": fmt.Sprintf("/download/%s", fileID),
 			"static_url":   fmt.Sprintf("/static/%s", fileName),
 		})
 	}
 
-	response := map[string]interface{}{
+	response := hikari.H{
 		"message":        fmt.Sprintf("Processed %d files", len(uploadedFiles)),
 		"uploaded_files": results,
 		"uploaded_count": len(results),
@@ -304,7 +304,7 @@ func listFiles(c *hikari.Context) {
 		fileList = append(fileList, fileInfo)
 	}
 
-	c.JSON(http.StatusOK, map[string]interface{}{
+	c.JSON(http.StatusOK, hikari.H{
 		"files": fileList,
 		"count": len(fileList),
 	})
@@ -314,7 +314,7 @@ func getFileInfo(c *hikari.Context) {
 	fileID := c.Param("id")
 	fileInfo, exists := files[fileID]
 	if !exists {
-		c.JSON(http.StatusNotFound, map[string]string{
+		c.JSON(http.StatusNotFound, hikari.H{
 			"error": "File not found",
 		})
 		return
@@ -324,13 +324,13 @@ func getFileInfo(c *hikari.Context) {
 	filePath := filepath.Join(uploadDir, fileInfo.Path)
 	if _, err := os.Stat(filePath); os.IsNotExist(err) {
 		delete(files, fileID) // Remove from memory if file doesn't exist
-		c.JSON(http.StatusNotFound, map[string]string{
+		c.JSON(http.StatusNotFound, hikari.H{
 			"error": "File not found on disk",
 		})
 		return
 	}
 
-	c.JSON(http.StatusOK, map[string]interface{}{
+	c.JSON(http.StatusOK, hikari.H{
 		"file":         fileInfo,
 		"download_url": fmt.Sprintf("/download/%s", fileID),
 		"static_url":   fmt.Sprintf("/static/%s", fileInfo.Path),
@@ -341,7 +341,7 @@ func downloadFile(c *hikari.Context) {
 	fileID := c.Param("id")
 	fileInfo, exists := files[fileID]
 	if !exists {
-		c.JSON(http.StatusNotFound, map[string]string{
+		c.JSON(http.StatusNotFound, hikari.H{
 			"error": "File not found",
 		})
 		return
@@ -352,7 +352,7 @@ func downloadFile(c *hikari.Context) {
 	// Check if file exists
 	if _, err := os.Stat(filePath); os.IsNotExist(err) {
 		delete(files, fileID)
-		c.JSON(http.StatusNotFound, map[string]string{
+		c.JSON(http.StatusNotFound, hikari.H{
 			"error": "File not found on disk",
 		})
 		return
@@ -371,7 +371,7 @@ func deleteFile(c *hikari.Context) {
 	fileID := c.Param("id")
 	fileInfo, exists := files[fileID]
 	if !exists {
-		c.JSON(http.StatusNotFound, map[string]string{
+		c.JSON(http.StatusNotFound, hikari.H{
 			"error": "File not found",
 		})
 		return
@@ -381,7 +381,7 @@ func deleteFile(c *hikari.Context) {
 
 	// Delete file from disk
 	if err := os.Remove(filePath); err != nil && !os.IsNotExist(err) {
-		c.JSON(http.StatusInternalServerError, map[string]string{
+		c.JSON(http.StatusInternalServerError, hikari.H{
 			"error": "Unable to delete file",
 		})
 		return
@@ -390,7 +390,7 @@ func deleteFile(c *hikari.Context) {
 	// Remove from memory
 	delete(files, fileID)
 
-	c.JSON(http.StatusOK, map[string]string{
+	c.JSON(http.StatusOK, hikari.H{
 		"message": "File deleted successfully",
 	})
 }
@@ -400,7 +400,7 @@ func serveStatic(c *hikari.Context) {
 	filePath := c.Wildcard()
 
 	if filePath == "" {
-		c.JSON(http.StatusBadRequest, map[string]string{
+		c.JSON(http.StatusBadRequest, hikari.H{
 			"error": "No file specified",
 		})
 		return
@@ -412,7 +412,7 @@ func serveStatic(c *hikari.Context) {
 	absUploadDir, _ := filepath.Abs(uploadDir)
 	absFullPath, _ := filepath.Abs(fullPath)
 	if !strings.HasPrefix(absFullPath, absUploadDir) {
-		c.JSON(http.StatusForbidden, map[string]string{
+		c.JSON(http.StatusForbidden, hikari.H{
 			"error": "Access denied",
 		})
 		return
@@ -420,7 +420,7 @@ func serveStatic(c *hikari.Context) {
 
 	// Check if file exists
 	if _, err := os.Stat(fullPath); os.IsNotExist(err) {
-		c.JSON(http.StatusNotFound, map[string]string{
+		c.JSON(http.StatusNotFound, hikari.H{
 			"error": "File not found",
 		})
 		return
@@ -434,7 +434,7 @@ func healthCheck(c *hikari.Context) {
 	// Check if upload directory exists and is writable
 	uploadInfo, err := os.Stat(uploadDir)
 	if err != nil {
-		c.JSON(http.StatusServiceUnavailable, map[string]interface{}{
+		c.JSON(http.StatusServiceUnavailable, hikari.H{
 			"status":           "unhealthy",
 			"upload_directory": "not accessible",
 			"error":            err.Error(),
@@ -442,7 +442,7 @@ func healthCheck(c *hikari.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, map[string]interface{}{
+	c.JSON(http.StatusOK, hikari.H{
 		"status":           "healthy",
 		"upload_directory": uploadDir,
 		"directory_exists": uploadInfo.IsDir(),

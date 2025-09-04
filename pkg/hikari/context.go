@@ -2,6 +2,7 @@ package hikari
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"go.uber.org/zap"
@@ -52,6 +53,12 @@ func (c *Context) JSON(status int, v any) {
 	c.Writer.Header().Set("Content-Type", "application/json")
 	c.Writer.WriteHeader(status)
 	_ = json.NewEncoder(c.Writer).Encode(v)
+}
+
+func (c *Context) String(status int, format string, values ...any) {
+	c.Writer.Header().Set("Content-Type", "text/plain")
+	c.Writer.WriteHeader(status)
+	_, _ = c.Writer.Write([]byte(fmt.Sprintf(format, values...)))
 }
 
 func (c *Context) Param(key string) string {

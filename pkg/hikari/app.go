@@ -42,23 +42,23 @@ func New(addr string) *App {
 }
 
 func (a *App) GET(pattern string, handler HandlerFunc, middlewares ...Middleware) {
-	a.router.Handle(http.MethodGet, pattern, handler, middlewares...)
+	a.router.handle(http.MethodGet, pattern, handler, middlewares...)
 }
 
 func (a *App) POST(pattern string, handler HandlerFunc, middlewares ...Middleware) {
-	a.router.Handle(http.MethodPost, pattern, handler, middlewares...)
+	a.router.handle(http.MethodPost, pattern, handler, middlewares...)
 }
 
 func (a *App) PUT(pattern string, handler HandlerFunc, middlewares ...Middleware) {
-	a.router.Handle(http.MethodPut, pattern, handler, middlewares...)
+	a.router.handle(http.MethodPut, pattern, handler, middlewares...)
 }
 
 func (a *App) PATCH(pattern string, handler HandlerFunc, middlewares ...Middleware) {
-	a.router.Handle(http.MethodPatch, pattern, handler, middlewares...)
+	a.router.handle(http.MethodPatch, pattern, handler, middlewares...)
 }
 
 func (a *App) DELETE(pattern string, handler HandlerFunc, middlewares ...Middleware) {
-	a.router.Handle(http.MethodDelete, pattern, handler, middlewares...)
+	a.router.handle(http.MethodDelete, pattern, handler, middlewares...)
 }
 
 func (a *App) Use(middleware Middleware) {
@@ -68,67 +68,7 @@ func (a *App) Use(middleware Middleware) {
 func (a *App) buildHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		routerHandler := func(c *Context) {
-			a.router.ServeContext(c)
-		}
-
-		// Built-in Recovery Middleware (always applied first)
-		recoveryMiddleware := func(next HandlerFunc) HandlerFunc {
-			return func(c *Context) {
-				defer func() {
-					if r := recover(); r != nil {
-						a.logger.Error("Request panic recovered",
-							zap.Any("panic", r),
-							zap.String("method", c.Method()),
-							zap.String("path", c.Path()),
-						)
-						http.Error(c.Writer, "Internal Server Error", http.StatusInternalServerError)
-					}
-				}()
-				next(c)
-			}
-		}
-
-		// Built-in Logger Middleware (applied after recovery)
-		loggerMiddleware := func(next HandlerFunc) HandlerFunc {
-			return func(c *Context) {
-				start := time.Now()
-
-				// Create a contextual logger with request information
-				reqLogger := a.logger.With(
-					zap.String("method", c.Method()),
-					zap.String("path", c.Path()),
-					zap.String("remote_addr", c.Request.RemoteAddr),
-					zap.String("user_agent", c.Request.Header.Get("User-Agent")),
-				)
-
-				// Replace the context logger with the enriched one
-				c.Logger = reqLogger
-
-				reqLogger.Info("Request started")
-				next(c)
-
-				duration := time.Since(start)
-				status := c.GetStatus()
-
-				// Choose log level based on status code
-				switch {
-				case status >= 500:
-					reqLogger.Error("Request completed",
-						zap.Int("status", status),
-						zap.Duration("duration", duration),
-					)
-				case status >= 400:
-					reqLogger.Warn("Request completed",
-						zap.Int("status", status),
-						zap.Duration("duration", duration),
-					)
-				default:
-					reqLogger.Info("Request completed",
-						zap.Int("status", status),
-						zap.Duration("duration", duration),
-					)
-				}
-			}
+			a.router.serveContext(c)
 		}
 
 		// Apply middlewares in reverse order to achieve correct execution order:
@@ -141,9 +81,9 @@ func (a *App) buildHandler() http.Handler {
 		}
 
 		// Apply built-in middlewares (logger wraps user middlewares)
-		handler = loggerMiddleware(handler)
+		handler = a.loggerMiddleware(handler)
 		// Recovery wraps everything (outermost layer)
-		handler = recoveryMiddleware(handler)
+		handler = a.recoveryMiddleware(handler)
 
 		// Create context and call the handler
 		ctx := &Context{

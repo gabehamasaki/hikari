@@ -55,10 +55,10 @@ func main() {
 }
 
 func homePage(c *hikari.Context) {
-	c.JSON(http.StatusOK, map[string]interface{}{
+	c.JSON(http.StatusOK, hikari.H{
 		"message": "Welcome to Todo API",
 		"version": "1.0.0",
-		"endpoints": map[string]string{
+		"endpoints": hikari.H{
 			"GET /todos":              "List all todos",
 			"GET /todos/:id":          "Get todo by ID",
 			"POST /todos":             "Create new todo",
@@ -89,7 +89,7 @@ func getTodos(c *hikari.Context) {
 		filteredTodos = todos
 	}
 
-	c.JSON(http.StatusOK, map[string]interface{}{
+	c.JSON(http.StatusOK, hikari.H{
 		"todos": filteredTodos,
 		"count": len(filteredTodos),
 	})
@@ -98,7 +98,7 @@ func getTodos(c *hikari.Context) {
 func getTodo(c *hikari.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, map[string]string{
+		c.JSON(http.StatusBadRequest, hikari.H{
 			"error": "Invalid todo ID",
 		})
 		return
@@ -111,7 +111,7 @@ func getTodo(c *hikari.Context) {
 		}
 	}
 
-	c.JSON(http.StatusNotFound, map[string]string{
+	c.JSON(http.StatusNotFound, hikari.H{
 		"error": "Todo not found",
 	})
 }
@@ -123,14 +123,14 @@ func createTodo(c *hikari.Context) {
 	}
 
 	if err := c.Bind(&newTodo); err != nil {
-		c.JSON(http.StatusBadRequest, map[string]string{
+		c.JSON(http.StatusBadRequest, hikari.H{
 			"error": "Invalid JSON data",
 		})
 		return
 	}
 
 	if newTodo.Title == "" {
-		c.JSON(http.StatusBadRequest, map[string]string{
+		c.JSON(http.StatusBadRequest, hikari.H{
 			"error": "Title is required",
 		})
 		return
@@ -153,7 +153,7 @@ func createTodo(c *hikari.Context) {
 func updateTodo(c *hikari.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, map[string]string{
+		c.JSON(http.StatusBadRequest, hikari.H{
 			"error": "Invalid todo ID",
 		})
 		return
@@ -166,7 +166,7 @@ func updateTodo(c *hikari.Context) {
 	}
 
 	if err := c.Bind(&updateData); err != nil {
-		c.JSON(http.StatusBadRequest, map[string]string{
+		c.JSON(http.StatusBadRequest, hikari.H{
 			"error": "Invalid JSON data",
 		})
 		return
@@ -189,7 +189,7 @@ func updateTodo(c *hikari.Context) {
 		}
 	}
 
-	c.JSON(http.StatusNotFound, map[string]string{
+	c.JSON(http.StatusNotFound, hikari.H{
 		"error": "Todo not found",
 	})
 }
@@ -197,7 +197,7 @@ func updateTodo(c *hikari.Context) {
 func deleteTodo(c *hikari.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, map[string]string{
+		c.JSON(http.StatusBadRequest, hikari.H{
 			"error": "Invalid todo ID",
 		})
 		return
@@ -206,14 +206,14 @@ func deleteTodo(c *hikari.Context) {
 	for i, todo := range todos {
 		if todo.ID == id {
 			todos = append(todos[:i], todos[i+1:]...)
-			c.JSON(http.StatusOK, map[string]string{
+			c.JSON(http.StatusOK, hikari.H{
 				"message": "Todo deleted successfully",
 			})
 			return
 		}
 	}
 
-	c.JSON(http.StatusNotFound, map[string]string{
+	c.JSON(http.StatusNotFound, hikari.H{
 		"error": "Todo not found",
 	})
 }
@@ -221,7 +221,7 @@ func deleteTodo(c *hikari.Context) {
 func toggleTodo(c *hikari.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, map[string]string{
+		c.JSON(http.StatusBadRequest, hikari.H{
 			"error": "Invalid todo ID",
 		})
 		return
@@ -235,7 +235,7 @@ func toggleTodo(c *hikari.Context) {
 		}
 	}
 
-	c.JSON(http.StatusNotFound, map[string]string{
+	c.JSON(http.StatusNotFound, hikari.H{
 		"error": "Todo not found",
 	})
 }
