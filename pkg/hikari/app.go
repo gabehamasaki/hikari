@@ -64,6 +64,14 @@ func (a *App) DELETE(pattern string, handler HandlerFunc, middlewares ...Middlew
 	a.router.handle(http.MethodDelete, pattern, handler, middlewares...)
 }
 
+func (a *App) Group(prefix string, middlewares ...Middleware) *Group {
+	return &Group{
+		prefix:      prefix,
+		middlewares: middlewares,
+		app:         a,
+	}
+}
+
 func (a *App) Use(middleware Middleware) {
 	a.middlewares = append(a.middlewares, middleware)
 }
