@@ -44,13 +44,13 @@ Content-Type: application/json
 GET {{baseUrl}}/todos
 
 ### Step 7: Get details of first created todo
-GET {{baseUrl}}/todos/{{createTodo1.response.body.todo.id}}
+GET {{baseUrl}}/todos/{{createTodo1.response.body.id}}
 
 ### Step 8: Get details of second created todo
-GET {{baseUrl}}/todos/{{createTodo2.response.body.todo.id}}
+GET {{baseUrl}}/todos/{{createTodo2.response.body.id}}
 
 ### Step 9: Update first todo
-PUT {{baseUrl}}/todos/{{createTodo1.response.body.todo.id}}
+PUT {{baseUrl}}/todos/{{createTodo1.response.body.id}}
 Content-Type: application/json
 
 {
@@ -60,7 +60,7 @@ Content-Type: application/json
 }
 
 ### Step 10: Update second todo (partial)
-PUT {{baseUrl}}/todos/{{createTodo2.response.body.todo.id}}
+PUT {{baseUrl}}/todos/{{createTodo2.response.body.id}}
 Content-Type: application/json
 
 {
@@ -68,7 +68,7 @@ Content-Type: application/json
 }
 
 ### Step 11: Toggle completion status of third todo
-PATCH {{baseUrl}}/todos/{{createTodo3.response.body.todo.id}}/toggle
+PATCH {{baseUrl}}/todos/{{createTodo3.response.body.id}}/toggle
 
 ### Step 12: List completed todos
 GET {{baseUrl}}/todos?status=completed
@@ -77,7 +77,7 @@ GET {{baseUrl}}/todos?status=completed
 GET {{baseUrl}}/todos?status=pending
 
 ### Step 14: Toggle first todo back to pending
-PATCH {{baseUrl}}/todos/{{createTodo1.response.body.todo.id}}/toggle
+PATCH {{baseUrl}}/todos/{{createTodo1.response.body.id}}/toggle
 
 ### Step 15: List all todos after toggles
 GET {{baseUrl}}/todos
@@ -106,16 +106,16 @@ Content-Type: application/json
 GET {{baseUrl}}/todos
 
 ### Step 19: Delete the third todo
-DELETE {{baseUrl}}/todos/{{createTodo3.response.body.todo.id}}
+DELETE {{baseUrl}}/todos/{{createTodo3.response.body.id}}
 
 ### Step 20: Try to get deleted todo (should fail)
-GET {{baseUrl}}/todos/{{createTodo3.response.body.todo.id}}
+GET {{baseUrl}}/todos/{{createTodo3.response.body.id}}
 
 ### Step 21: List todos after deletion
 GET {{baseUrl}}/todos
 
 ### Step 22: Mark special chars todo as completed
-PUT {{baseUrl}}/todos/{{createSpecialTodo.response.body.todo.id}}
+PUT {{baseUrl}}/todos/{{createSpecialTodo.response.body.id}}
 Content-Type: application/json
 
 {
@@ -123,7 +123,7 @@ Content-Type: application/json
 }
 
 ### Step 23: Mark long content todo as completed
-PATCH {{baseUrl}}/todos/{{createLongTodo.response.body.todo.id}}/toggle
+PATCH {{baseUrl}}/todos/{{createLongTodo.response.body.id}}/toggle
 
 ### Step 24: Final list of completed todos
 GET {{baseUrl}}/todos?status=completed
@@ -135,10 +135,10 @@ GET {{baseUrl}}/todos?status=pending
 GET {{baseUrl}}/todos
 
 ### Step 27: Clean up - delete special todo
-DELETE {{baseUrl}}/todos/{{createSpecialTodo.response.body.todo.id}}
+DELETE {{baseUrl}}/todos/{{createSpecialTodo.response.body.id}}
 
 ### Step 28: Clean up - delete long todo
-DELETE {{baseUrl}}/todos/{{createLongTodo.response.body.todo.id}}
+DELETE {{baseUrl}}/todos/{{createLongTodo.response.body.id}}
 
 ### Step 29: Final state after cleanup
 GET {{baseUrl}}/todos
