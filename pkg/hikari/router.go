@@ -3,6 +3,8 @@ package hikari
 import (
 	"net/http"
 	"strings"
+
+	"go.uber.org/zap"
 )
 
 type route struct {
@@ -14,15 +16,28 @@ type route struct {
 
 type router struct {
 	routes []route
+	logger *zap.Logger
 }
 
-func newRouter() *router {
+func newRouter(logger *zap.Logger) *router {
 	return &router{
 		routes: []route{},
+		logger: logger,
 	}
 }
 
 func (r *router) handle(method, pattern string, handler HandlerFunc, middlewares ...Middleware) {
+	normalizedPattern := buildPattern("", pattern, r.logger)
+
+	r.routes = append(r.routes, route{
+		method:      method,
+		pattern:     normalizedPattern,
+		handler:     handler,
+		middlewares: middlewares,
+	})
+}
+
+func (r *router) handleNormalized(method, pattern string, handler HandlerFunc, middlewares ...Middleware) {
 	r.routes = append(r.routes, route{
 		method:      method,
 		pattern:     pattern,
@@ -46,8 +61,10 @@ func (r *router) serveContext(ctx *Context) {
 			continue
 		}
 
+		requestPath := normalizedPattern(ctx.Request.URL.Path)
+
 		pParts := splitPath(rt.pattern)
-		rParts := splitPath(ctx.Request.URL.Path)
+		rParts := splitPath(requestPath)
 
 		// Check for wildcard pattern (*)
 		hasWildcard := len(pParts) > 0 && pParts[len(pParts)-1] == "*"

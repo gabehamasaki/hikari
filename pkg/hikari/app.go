@@ -32,7 +32,7 @@ func New(addr string) *App {
 
 	return &App{
 		addr:           addr,
-		router:         newRouter(),
+		router:         newRouter(logger),
 		middlewares:    []Middleware{},
 		logger:         logger,
 		requestTimeout: 30 * time.Second, // Default request timeout

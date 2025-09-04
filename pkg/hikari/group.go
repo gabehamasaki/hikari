@@ -31,8 +31,10 @@ func (g *Group) Use(middleware Middleware) {
 }
 
 func (g *Group) Group(prefix string, middlewares ...Middleware) *Group {
+	newPrefix := buildPattern(g.prefix, prefix, g.app.logger)
+
 	newGroup := &Group{
-		prefix:      g.prefix + prefix,
+		prefix:      newPrefix,
 		middlewares: make([]Middleware, len(g.middlewares)+len(middlewares)),
 		app:         g.app,
 	}
@@ -49,6 +51,6 @@ func (g *Group) handle(method, pattern string, handler HandlerFunc, middlewares 
 	copy(allMiddlewares, g.middlewares)
 	copy(allMiddlewares[len(g.middlewares):], middlewares)
 
-	fullPattern := g.prefix + pattern
-	g.app.router.handle(method, fullPattern, handler, allMiddlewares...)
+	fullPattern := buildPattern(g.prefix, pattern, g.app.logger)
+	g.app.router.handleNormalized(method, fullPattern, handler, allMiddlewares...)
 }
