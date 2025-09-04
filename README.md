@@ -40,7 +40,7 @@ func main() {
     app := hikari.New(":8080")
 
     app.GET("/hello/:name", func(c *hikari.Context) {
-        c.JSON(http.StatusOK, map[string]string{
+        c.JSON(http.StatusOK, hikari.H{
             "message": "Hello, " + c.Param("name") + "!",
             "status":  "success",
         })
@@ -88,14 +88,14 @@ Extract parameters from URLs using the `:param` syntax and wildcards `*`:
 // Simple parameters
 app.GET("/users/:id", func(c *hikari.Context) {
     id := c.Param("id")
-    c.JSON(http.StatusOK, map[string]string{"user_id": id})
+    c.JSON(http.StatusOK, hikari.H{"user_id": id})
 })
 
 // Multiple parameters
 app.GET("/posts/:category/:id", func(c *hikari.Context) {
     category := c.Param("category")
     id := c.Param("id")
-    c.JSON(http.StatusOK, map[string]string{
+    c.JSON(http.StatusOK, hikari.H{
         "category": category,
         "post_id": id,
     })
@@ -104,14 +104,14 @@ app.GET("/posts/:category/:id", func(c *hikari.Context) {
 // Wildcard - captures multiple path segments
 app.GET("/files/*", func(c *hikari.Context) {
     filepath := c.Wildcard() // Ex: "docs/api/v1/users.md"
-    c.JSON(http.StatusOK, map[string]string{"file": filepath})
+    c.JSON(http.StatusOK, hikari.H{"file": filepath})
 })
 
 // Combining parameters and wildcard
 app.GET("/api/:version/*", func(c *hikari.Context) {
     version := c.Param("version")
     endpoint := c.Wildcard()
-    c.JSON(http.StatusOK, map[string]string{
+    c.JSON(http.StatusOK, hikari.H{
         "version": version,
         "endpoint": endpoint,
     })
@@ -122,10 +122,28 @@ app.GET("/api/:version/*", func(c *hikari.Context) {
 
 The `Context` provides various methods to handle requests and responses:
 
+### `hikari.H` Alias
+
+For easier JSON response creation, Hikari provides the `hikari.H` alias:
+
+```go
+// Instead of using map[string]any or map[string]interface{}
+c.JSON(http.StatusOK, map[string]interface{}{
+    "message": "success",
+    "data": userData,
+})
+
+// Use the cleaner hikari.H alias
+c.JSON(http.StatusOK, hikari.H{
+    "message": "success",
+    "data": userData,
+})
+```
+
 #### Response Methods
 ```go
 // JSON response
-c.JSON(http.StatusOK, map[string]interface{}{
+c.JSON(http.StatusOK, hikari.H{
     "message": "Success",
     "data": data,
 })
@@ -166,7 +184,7 @@ email := c.FormValue("email")
 // Bind JSON request body to struct
 var user User
 if err := c.Bind(&user); err != nil {
-    c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid JSON"})
+    c.JSON(http.StatusBadRequest, hikari.H{"error": "Invalid JSON"})
     return
 }
 
@@ -204,7 +222,7 @@ func AuthMiddleware() hikari.Middleware {
         return func(c *hikari.Context) {
             token := c.Request.Header.Get("Authorization")
             if token == "" {
-                c.JSON(http.StatusUnauthorized, map[string]string{"error": "Token required"})
+                c.JSON(http.StatusUnauthorized, hikari.H{"error": "Token required"})
                 return
             }
             next(c)
@@ -302,7 +320,7 @@ func AuthMiddleware() hikari.Middleware {
         return func(c *hikari.Context) {
             token := c.Request.Header.Get("Authorization")
             if token != "Bearer valid-token" {
-                c.JSON(http.StatusUnauthorized, map[string]string{
+                c.JSON(http.StatusUnauthorized, hikari.H{
                     "error": "Invalid or missing token"})
                 return
             }
@@ -324,7 +342,7 @@ func main() {
 
     // Public routes
     app.GET("/", func(c *hikari.Context) {
-        c.JSON(http.StatusOK, map[string]string{
+        c.JSON(http.StatusOK, hikari.H{
             "message": "Hikari API is running!",
             "version": "1.0.0",
         })
@@ -354,7 +372,7 @@ func main() {
 }
 
 func getUsers(c *hikari.Context) {
-    c.JSON(http.StatusOK, map[string]interface{}{
+    c.JSON(http.StatusOK, hikari.H{
         "data": users,
         "count": len(users),
     })
@@ -363,24 +381,24 @@ func getUsers(c *hikari.Context) {
 func getUser(c *hikari.Context) {
     id, err := strconv.Atoi(c.Param("id"))
     if err != nil {
-        c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid user ID"})
+        c.JSON(http.StatusBadRequest, hikari.H{"error": "Invalid user ID"})
         return
     }
 
     for _, user := range users {
         if user.ID == id {
-            c.JSON(http.StatusOK, map[string]interface{}{"data": user})
+            c.JSON(http.StatusOK, hikari.H{"data": user})
             return
         }
     }
 
-    c.JSON(http.StatusNotFound, map[string]string{"error": "User not found"})
+    c.JSON(http.StatusNotFound, hikari.H{"error": "User not found"})
 }
 
 func createUser(c *hikari.Context) {
     var newUser User
     if err := c.Bind(&newUser); err != nil {
-        c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid JSON"})
+        c.JSON(http.StatusBadRequest, hikari.H{"error": "Invalid JSON"})
         return
     }
 
@@ -391,19 +409,19 @@ func createUser(c *hikari.Context) {
         zap.Int("user_id", newUser.ID),
         zap.String("user_name", newUser.Name))
 
-    c.JSON(http.StatusCreated, map[string]interface{}{"data": newUser})
+    c.JSON(http.StatusCreated, hikari.H{"data": newUser})
 }
 
 func updateUser(c *hikari.Context) {
     id, err := strconv.Atoi(c.Param("id"))
     if err != nil {
-        c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid user ID"})
+        c.JSON(http.StatusBadRequest, hikari.H{"error": "Invalid user ID"})
         return
     }
 
     var updatedUser User
     if err := c.Bind(&updatedUser); err != nil {
-        c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid JSON"})
+        c.JSON(http.StatusBadRequest, hikari.H{"error": "Invalid JSON"})
         return
     }
 
@@ -411,30 +429,30 @@ func updateUser(c *hikari.Context) {
         if user.ID == id {
             updatedUser.ID = id
             users[i] = updatedUser
-            c.JSON(http.StatusOK, map[string]interface{}{"data": updatedUser})
+            c.JSON(http.StatusOK, hikari.H{"data": updatedUser})
             return
         }
     }
 
-    c.JSON(http.StatusNotFound, map[string]string{"error": "User not found"})
+    c.JSON(http.StatusNotFound, hikari.H{"error": "User not found"})
 }
 
 func deleteUser(c *hikari.Context) {
     id, err := strconv.Atoi(c.Param("id"))
     if err != nil {
-        c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid user ID"})
+        c.JSON(http.StatusBadRequest, hikari.H{"error": "Invalid user ID"})
         return
     }
 
     for i, user := range users {
         if user.ID == id {
             users = append(users[:i], users[i+1:]...)
-            c.JSON(http.StatusOK, map[string]string{"message": "User deleted successfully"})
+            c.JSON(http.StatusOK, hikari.H{"message": "User deleted successfully"})
             return
         }
     }
 
-    c.JSON(http.StatusNotFound, map[string]string{"error": "User not found"})
+    c.JSON(http.StatusNotFound, hikari.H{"error": "User not found"})
 }
 ```
 
