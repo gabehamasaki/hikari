@@ -34,8 +34,8 @@ func main() {
 		panic(fmt.Sprintf("Failed to create uploads directory: %v", err))
 	}
 
-	// Middleware for CORS
-	app.Use(func(next hikari.HandlerFunc) hikari.HandlerFunc {
+	// Global CORS middleware
+	corsMiddleware := func(next hikari.HandlerFunc) hikari.HandlerFunc {
 		return func(c *hikari.Context) {
 			c.SetHeader("Access-Control-Allow-Origin", "*")
 			c.SetHeader("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS")
@@ -48,29 +48,68 @@ func main() {
 
 			next(c)
 		}
-	})
+	}
 
-	// Routes
+	// Apply global middleware
+	app.Use(corsMiddleware)
+
+	// Root welcome page
 	app.GET("/", homePage)
-	app.GET("/files", listFiles)
-	app.GET("/files/:id", getFileInfo)
-	app.GET("/download/:id", downloadFile)
-	app.POST("/upload", uploadFile)
-	app.POST("/upload/multiple", uploadMultipleFiles)
-	app.DELETE("/files/:id", deleteFile)
-	app.GET("/health", healthCheck)
 
-	// Static file serving for uploads directory
+	// API v1 group
+	v1Group := app.Group("/api/v1")
+	{
+		// File management routes
+		filesGroup := v1Group.Group("/files")
+		{
+			filesGroup.GET("/", listFiles)
+			filesGroup.GET("/:id", getFileInfo)
+			filesGroup.DELETE("/:id", deleteFile)
+		}
+
+		// Upload routes
+		uploadGroup := v1Group.Group("/upload")
+		{
+			uploadGroup.POST("/", uploadFile)
+			uploadGroup.POST("/multiple", uploadMultipleFiles)
+		}
+
+		// Download routes
+		v1Group.GET("/download/:id", downloadFile)
+
+		// Health check
+		v1Group.GET("/health", healthCheck)
+
+		// System info for monitoring
+		v1Group.GET("/info", func(c *hikari.Context) {
+			totalFiles := len(files) // files map variable
+			totalSize := int64(0)
+			for _, file := range files { // files map variable
+				totalSize += file.Size
+			}
+
+			c.JSON(http.StatusOK, hikari.H{
+				"service":     "file-upload",
+				"version":     "1.0.0",
+				"total_files": totalFiles,
+				"total_size":  totalSize,
+				"upload_dir":  uploadDir,
+			})
+		})
+	}
+
+	// Static file serving with versioned path
 	app.GET("/static/*", serveStatic)
 
 	fmt.Println("📁 File Upload Server running on http://localhost:8082")
 	fmt.Println("📂 Upload directory: " + uploadDir)
+	fmt.Println("📋 API endpoints available at /api/v1")
 	app.ListenAndServe()
 }
 
 func homePage(c *hikari.Context) {
 	c.JSON(http.StatusOK, hikari.H{
-		"message": "File Upload API",
+		"message": "File Upload API v1",
 		"version": "1.0.0",
 		"features": []string{
 			"Single file upload",
@@ -81,13 +120,15 @@ func homePage(c *hikari.Context) {
 			"Static file serving",
 		},
 		"endpoints": hikari.H{
-			"POST /upload":          "Upload single file",
-			"POST /upload/multiple": "Upload multiple files",
-			"GET /files":            "List all files",
-			"GET /files/:id":        "Get file information",
-			"GET /download/:id":     "Download file",
-			"DELETE /files/:id":     "Delete file",
-			"GET /static/*":         "Serve static files",
+			"POST /api/v1/upload":          "Upload single file",
+			"POST /api/v1/upload/multiple": "Upload multiple files",
+			"GET /api/v1/files":            "List all files",
+			"GET /api/v1/files/:id":        "Get file information",
+			"GET /api/v1/download/:id":     "Download file",
+			"DELETE /api/v1/files/:id":     "Delete file",
+			"GET /api/v1/health":           "Health check",
+			"GET /api/v1/info":             "System information",
+			"GET /static/*":                "Serve static files",
 		},
 		"max_file_size": "10MB per file",
 	})

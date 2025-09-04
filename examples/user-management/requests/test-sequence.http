@@ -4,12 +4,19 @@
 ###
 
 @baseUrl = http://localhost:8081
+@apiUrl = {{baseUrl}}/api/v1
 
 ### Step 1: Get API Info
 GET {{baseUrl}}/
 
+### Step 1.1: Get API v1 Info
+GET {{apiUrl}}/
+
+### Step 1.2: Health Check
+GET {{apiUrl}}/health
+
 ### Step 2: Register a new user
-POST {{baseUrl}}/auth/register
+POST {{apiUrl}}/auth/register
 Content-Type: application/json
 
 {
@@ -20,7 +27,7 @@ Content-Type: application/json
 
 ### Step 3: Login as admin (save token)
 # @name adminLogin
-POST {{baseUrl}}/auth/login
+POST {{apiUrl}}/auth/login
 Content-Type: application/json
 
 {
@@ -30,7 +37,7 @@ Content-Type: application/json
 
 ### Step 4: Login as regular user (save token)
 # @name userLogin
-POST {{baseUrl}}/auth/login
+POST {{apiUrl}}/auth/login
 Content-Type: application/json
 
 {
@@ -40,7 +47,7 @@ Content-Type: application/json
 
 ### Step 5: Login as newly created user
 # @name testUserLogin
-POST {{baseUrl}}/auth/login
+POST {{apiUrl}}/auth/login
 Content-Type: application/json
 
 {
@@ -49,19 +56,19 @@ Content-Type: application/json
 }
 
 ### Step 6: Get profile as test user
-GET {{baseUrl}}/profile
+GET {{apiUrl}}/profile
 Authorization: Bearer {{testUserLogin.response.body.token}}
 
 ### Step 7: List users as authenticated user
-GET {{baseUrl}}/users
+GET {{apiUrl}}/users
 Authorization: Bearer {{userLogin.response.body.token}}
 
 ### Step 8: Get specific user
-GET {{baseUrl}}/users/1
+GET {{apiUrl}}/users/1
 Authorization: Bearer {{userLogin.response.body.token}}
 
 ### Step 9: Update own profile
-PUT {{baseUrl}}/profile
+PUT {{apiUrl}}/profile
 Authorization: Bearer {{userLogin.response.body.token}}
 Content-Type: application/json
 
@@ -70,7 +77,7 @@ Content-Type: application/json
 }
 
 ### Step 10: Try to update another user (should fail)
-PUT {{baseUrl}}/users/1
+PUT {{apiUrl}}/users/1
 Authorization: Bearer {{userLogin.response.body.token}}
 Content-Type: application/json
 
@@ -79,15 +86,19 @@ Content-Type: application/json
 }
 
 ### Step 11: Admin - List all users
-GET {{baseUrl}}/admin/users
+GET {{apiUrl}}/admin/users
+Authorization: Bearer {{adminLogin.response.body.token}}
+
+### Step 11.1: Admin - Get system stats
+GET {{apiUrl}}/admin/stats
 Authorization: Bearer {{adminLogin.response.body.token}}
 
 ### Step 12: Admin - Deactivate test user
-PATCH {{baseUrl}}/admin/users/3/deactivate
+PATCH {{apiUrl}}/admin/users/3/deactivate
 Authorization: Bearer {{adminLogin.response.body.token}}
 
 ### Step 13: Admin - Try to login as deactivated user (should fail)
-POST {{baseUrl}}/auth/login
+POST {{apiUrl}}/auth/login
 Content-Type: application/json
 
 {
@@ -96,11 +107,11 @@ Content-Type: application/json
 }
 
 ### Step 14: Admin - Reactivate user
-PATCH {{baseUrl}}/admin/users/3/activate
+PATCH {{apiUrl}}/admin/users/3/activate
 Authorization: Bearer {{adminLogin.response.body.token}}
 
 ### Step 15: Admin - Update any user
-PUT {{baseUrl}}/users/2
+PUT {{apiUrl}}/users/2
 Authorization: Bearer {{adminLogin.response.body.token}}
 Content-Type: application/json
 
@@ -109,11 +120,11 @@ Content-Type: application/json
 }
 
 ### Step 16: Admin - Delete user
-DELETE {{baseUrl}}/users/3
+DELETE {{apiUrl}}/users/3
 Authorization: Bearer {{adminLogin.response.body.token}}
 
 ### Step 17: Logout admin
-POST {{baseUrl}}/auth/logout
+POST {{apiUrl}}/auth/logout
 Authorization: Bearer {{adminLogin.response.body.token}}
 
 ### Step 18: Logout regular user

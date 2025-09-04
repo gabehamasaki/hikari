@@ -4,19 +4,26 @@
 ###
 
 @baseUrl = http://localhost:8082
+@apiUrl = {{baseUrl}}/api/v1
 
 ### Step 1: Get API Info
 GET {{baseUrl}}/
 
+### Step 1.1: Get API v1 Info
+GET {{apiUrl}}/
+
 ### Step 2: Check Health
-GET {{baseUrl}}/health
+GET {{apiUrl}}/health
+
+### Step 2.1: Get System Info
+GET {{apiUrl}}/info
 
 ### Step 3: List files (should be empty initially)
-GET {{baseUrl}}/files
+GET {{apiUrl}}/files
 
 ### Step 4: Upload first file
 # @name uploadFile1
-POST {{baseUrl}}/upload
+POST {{apiUrl}}/upload
 Content-Type: multipart/form-data; boundary=boundary
 
 --boundary
@@ -30,7 +37,7 @@ Perfect for testing file upload functionality.
 
 ### Step 5: Upload second file (JSON)
 # @name uploadFile2
-POST {{baseUrl}}/upload
+POST {{apiUrl}}/upload
 Content-Type: multipart/form-data; boundary=boundary
 
 --boundary
@@ -49,7 +56,7 @@ Content-Type: application/json
 
 ### Step 6: Upload multiple files at once
 # @name uploadMultiple
-POST {{baseUrl}}/upload/multiple
+POST {{apiUrl}}/upload/multiple
 Content-Type: multipart/form-data; boundary=boundary
 
 --boundary
@@ -72,39 +79,39 @@ Jane,25,Los Angeles
 --boundary--
 
 ### Step 7: List all uploaded files
-GET {{baseUrl}}/files
+GET {{apiUrl}}/files
 
 ### Step 8: Get information about first uploaded file
 # Use the file ID from Step 4 response
-GET {{baseUrl}}/files/{{uploadFile1.response.body.file.id}}
+GET {{apiUrl}}/files/{{uploadFile1.response.body.file.id}}
 
 ### Step 9: Download the first file
-GET {{baseUrl}}/download/{{uploadFile1.response.body.file.id}}
+GET {{apiUrl}}/download/{{uploadFile1.response.body.file.id}}
 
 ### Step 10: Access file via static serving
 GET {{baseUrl}}/static/{{uploadFile1.response.body.file.name}}
 
 ### Step 11: Get information about JSON file
-GET {{baseUrl}}/files/{{uploadFile2.response.body.file.id}}
+GET {{apiUrl}}/files/{{uploadFile2.response.body.file.id}}
 
 ### Step 12: Download JSON file
-GET {{baseUrl}}/download/{{uploadFile2.response.body.file.id}}
+GET {{apiUrl}}/download/{{uploadFile2.response.body.file.id}}
 
 ### Step 13: Delete first file
-DELETE {{baseUrl}}/files/{{uploadFile1.response.body.file.id}}
+DELETE {{apiUrl}}/files/{{uploadFile1.response.body.file.id}}
 
 ### Step 14: Try to get deleted file (should fail)
-GET {{baseUrl}}/files/{{uploadFile1.response.body.file.id}}
+GET {{apiUrl}}/files/{{uploadFile1.response.body.file.id}}
 
 ### Step 15: Try to download deleted file (should fail)
-GET {{baseUrl}}/download/{{uploadFile1.response.body.file.id}}
+GET {{apiUrl}}/download/{{uploadFile1.response.body.file.id}}
 
 ### Step 16: List remaining files
-GET {{baseUrl}}/files
+GET {{apiUrl}}/files
 
 ### Step 17: Upload file with special characters
 # @name uploadSpecial
-POST {{baseUrl}}/upload
+POST {{apiUrl}}/upload
 Content-Type: multipart/form-data; boundary=boundary
 
 --boundary
@@ -117,7 +124,7 @@ It tests how the API handles unusual filenames.
 
 ### Step 18: Upload empty file
 # @name uploadEmpty
-POST {{baseUrl}}/upload
+POST {{apiUrl}}/upload
 Content-Type: multipart/form-data; boundary=boundary
 
 --boundary
@@ -128,13 +135,13 @@ Content-Type: text/plain
 --boundary--
 
 ### Step 19: Final file listing
-GET {{baseUrl}}/files
+GET {{apiUrl}}/files
 
 ### Step 20: Clean up - Delete remaining files
-DELETE {{baseUrl}}/files/{{uploadFile2.response.body.file.id}}
+DELETE {{apiUrl}}/files/{{uploadFile2.response.body.file.id}}
 
 ### Step 21: Clean up - Delete special file
-DELETE {{baseUrl}}/files/{{uploadSpecial.response.body.file.id}}
+DELETE {{apiUrl}}/files/{{uploadSpecial.response.body.file.id}}
 
 ### Step 22: Clean up - Delete empty file
 DELETE {{baseUrl}}/files/{{uploadEmpty.response.body.file.id}}

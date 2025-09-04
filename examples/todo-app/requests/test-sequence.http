@@ -4,16 +4,23 @@
 ###
 
 @baseUrl = http://localhost:8080
+@apiUrl = {{baseUrl}}/api/v1
 
 ### Step 1: Get API Information
 GET {{baseUrl}}/
 
+### Step 1.1: Get API v1 Information
+GET {{apiUrl}}/
+
+### Step 1.2: Health Check
+GET {{apiUrl}}/health
+
 ### Step 2: List initial todos (should have sample data)
-GET {{baseUrl}}/todos
+GET {{apiUrl}}/todos
 
 ### Step 3: Create first custom todo
 # @name createTodo1
-POST {{baseUrl}}/todos
+POST {{apiUrl}}/todos
 Content-Type: application/json
 
 {
@@ -23,7 +30,7 @@ Content-Type: application/json
 
 ### Step 4: Create second todo
 # @name createTodo2
-POST {{baseUrl}}/todos
+POST {{apiUrl}}/todos
 Content-Type: application/json
 
 {
@@ -33,7 +40,7 @@ Content-Type: application/json
 
 ### Step 5: Create third todo (simple)
 # @name createTodo3
-POST {{baseUrl}}/todos
+POST {{apiUrl}}/todos
 Content-Type: application/json
 
 {
@@ -41,16 +48,16 @@ Content-Type: application/json
 }
 
 ### Step 6: List all todos after creation
-GET {{baseUrl}}/todos
+GET {{apiUrl}}/todos
 
 ### Step 7: Get details of first created todo
-GET {{baseUrl}}/todos/{{createTodo1.response.body.id}}
+GET {{apiUrl}}/todos/{{createTodo1.response.body.id}}
 
 ### Step 8: Get details of second created todo
-GET {{baseUrl}}/todos/{{createTodo2.response.body.id}}
+GET {{apiUrl}}/todos/{{createTodo2.response.body.id}}
 
 ### Step 9: Update first todo
-PUT {{baseUrl}}/todos/{{createTodo1.response.body.id}}
+PUT {{apiUrl}}/todos/{{createTodo1.response.body.id}}
 Content-Type: application/json
 
 {
@@ -60,7 +67,7 @@ Content-Type: application/json
 }
 
 ### Step 10: Update second todo (partial)
-PUT {{baseUrl}}/todos/{{createTodo2.response.body.id}}
+PUT {{apiUrl}}/todos/{{createTodo2.response.body.id}}
 Content-Type: application/json
 
 {
@@ -68,23 +75,23 @@ Content-Type: application/json
 }
 
 ### Step 11: Toggle completion status of third todo
-PATCH {{baseUrl}}/todos/{{createTodo3.response.body.id}}/toggle
+PATCH {{apiUrl}}/todos/{{createTodo3.response.body.id}}/toggle
 
 ### Step 12: List completed todos
-GET {{baseUrl}}/todos?status=completed
+GET {{apiUrl}}/todos?status=completed
 
 ### Step 13: List pending todos
-GET {{baseUrl}}/todos?status=pending
+GET {{apiUrl}}/todos?status=pending
 
 ### Step 14: Toggle first todo back to pending
-PATCH {{baseUrl}}/todos/{{createTodo1.response.body.id}}/toggle
+PATCH {{apiUrl}}/todos/{{createTodo1.response.body.id}}/toggle
 
 ### Step 15: List all todos after toggles
-GET {{baseUrl}}/todos
+GET {{apiUrl}}/todos
 
 ### Step 16: Create todo with special characters
 # @name createSpecialTodo
-POST {{baseUrl}}/todos
+POST {{apiUrl}}/todos
 Content-Type: application/json
 
 {
@@ -94,7 +101,7 @@ Content-Type: application/json
 
 ### Step 17: Create todo with long content
 # @name createLongTodo
-POST {{baseUrl}}/todos
+POST {{apiUrl}}/todos
 Content-Type: application/json
 
 {
@@ -103,19 +110,19 @@ Content-Type: application/json
 }
 
 ### Step 18: List all todos (should show all created)
-GET {{baseUrl}}/todos
+GET {{apiUrl}}/todos
 
 ### Step 19: Delete the third todo
-DELETE {{baseUrl}}/todos/{{createTodo3.response.body.id}}
+DELETE {{apiUrl}}/todos/{{createTodo3.response.body.id}}
 
 ### Step 20: Try to get deleted todo (should fail)
-GET {{baseUrl}}/todos/{{createTodo3.response.body.id}}
+GET {{apiUrl}}/todos/{{createTodo3.response.body.id}}
 
 ### Step 21: List todos after deletion
-GET {{baseUrl}}/todos
+GET {{apiUrl}}/todos
 
 ### Step 22: Mark special chars todo as completed
-PUT {{baseUrl}}/todos/{{createSpecialTodo.response.body.id}}
+PUT {{apiUrl}}/todos/{{createSpecialTodo.response.body.id}}
 Content-Type: application/json
 
 {
@@ -123,19 +130,19 @@ Content-Type: application/json
 }
 
 ### Step 23: Mark long content todo as completed
-PATCH {{baseUrl}}/todos/{{createLongTodo.response.body.id}}/toggle
+PATCH {{apiUrl}}/todos/{{createLongTodo.response.body.id}}/toggle
 
 ### Step 24: Final list of completed todos
-GET {{baseUrl}}/todos?status=completed
+GET {{apiUrl}}/todos?status=completed
 
 ### Step 25: Final list of pending todos
-GET {{baseUrl}}/todos?status=pending
+GET {{apiUrl}}/todos?status=pending
 
 ### Step 26: Complete workflow - final todo list
-GET {{baseUrl}}/todos
+GET {{apiUrl}}/todos
 
 ### Step 27: Clean up - delete special todo
-DELETE {{baseUrl}}/todos/{{createSpecialTodo.response.body.id}}
+DELETE {{apiUrl}}/todos/{{createSpecialTodo.response.body.id}}
 
 ### Step 28: Clean up - delete long todo
 DELETE {{baseUrl}}/todos/{{createLongTodo.response.body.id}}

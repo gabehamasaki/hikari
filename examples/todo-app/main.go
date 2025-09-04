@@ -26,8 +26,8 @@ func main() {
 	// Add some sample todos
 	initializeTodos()
 
-	// Custom middleware for CORS
-	app.Use(func(next hikari.HandlerFunc) hikari.HandlerFunc {
+	// Global CORS middleware
+	corsMiddleware := func(next hikari.HandlerFunc) hikari.HandlerFunc {
 		return func(c *hikari.Context) {
 			c.SetHeader("Access-Control-Allow-Origin", "*")
 			c.SetHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
@@ -40,31 +40,70 @@ func main() {
 
 			next(c)
 		}
-	})
+	}
 
-	// Routes
-	app.GET("/", homePage)
-	app.GET("/todos", getTodos)
-	app.GET("/todos/:id", getTodo)
-	app.POST("/todos", createTodo)
-	app.PUT("/todos/:id", updateTodo)
-	app.DELETE("/todos/:id", deleteTodo)
-	app.PATCH("/todos/:id/toggle", toggleTodo)
+	// JSON Content-Type middleware
+	jsonMiddleware := func(next hikari.HandlerFunc) hikari.HandlerFunc {
+		return func(c *hikari.Context) {
+			c.SetHeader("Content-Type", "application/json")
+			next(c)
+		}
+	}
+
+	// Apply global middlewares
+	app.Use(corsMiddleware)
+	app.Use(jsonMiddleware)
+
+	// API v1 routes group
+	v1Group := app.Group("/api/v1")
+	{
+		// Home page
+		v1Group.GET("/", homePage)
+
+		// Todos group
+		todosGroup := v1Group.Group("/todos")
+		{
+			todosGroup.GET("/", getTodos)
+			todosGroup.POST("/", createTodo)
+			todosGroup.GET("/:id", getTodo)
+			todosGroup.PUT("/:id", updateTodo)
+			todosGroup.DELETE("/:id", deleteTodo)
+			todosGroup.PATCH("/:id/toggle", toggleTodo)
+		}
+
+		// Health check endpoint
+		v1Group.GET("/health", func(c *hikari.Context) {
+			c.JSON(http.StatusOK, hikari.H{
+				"status":    "healthy",
+				"timestamp": time.Now().Format(time.RFC3339),
+			})
+		})
+	}
+
+	// Root endpoints for backward compatibility
+	app.GET("/", func(c *hikari.Context) {
+		c.JSON(http.StatusOK, hikari.H{
+			"message":      "Todo API - Use /api/v1 for latest version",
+			"version":      "1.0.0",
+			"api_endpoint": "/api/v1",
+		})
+	})
 
 	app.ListenAndServe()
 }
 
 func homePage(c *hikari.Context) {
 	c.JSON(http.StatusOK, hikari.H{
-		"message": "Welcome to Todo API",
+		"message": "Welcome to Todo API v1",
 		"version": "1.0.0",
 		"endpoints": hikari.H{
-			"GET /todos":              "List all todos",
-			"GET /todos/:id":          "Get todo by ID",
-			"POST /todos":             "Create new todo",
-			"PUT /todos/:id":          "Update todo",
-			"DELETE /todos/:id":       "Delete todo",
-			"PATCH /todos/:id/toggle": "Toggle todo completion",
+			"GET /api/v1/todos":              "List all todos",
+			"GET /api/v1/todos/:id":          "Get todo by ID",
+			"POST /api/v1/todos":             "Create new todo",
+			"PUT /api/v1/todos/:id":          "Update todo",
+			"DELETE /api/v1/todos/:id":       "Delete todo",
+			"PATCH /api/v1/todos/:id/toggle": "Toggle todo completion",
+			"GET /api/v1/health":             "Health check",
 		},
 	})
 }

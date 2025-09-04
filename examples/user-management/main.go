@@ -46,54 +46,109 @@ func main() {
 	// Initialize with admin user
 	initializeUsers()
 
-	// Middleware for JSON responses (global)
-	app.Use(func(next hikari.HandlerFunc) hikari.HandlerFunc {
+	// Global JSON middleware
+	jsonMiddleware := func(next hikari.HandlerFunc) hikari.HandlerFunc {
 		return func(c *hikari.Context) {
 			c.SetHeader("Content-Type", "application/json")
 			next(c)
 		}
-	})
+	}
 
-	// Public routes
+	// Apply global middleware
+	app.Use(jsonMiddleware)
+
+	// Root welcome page
 	app.GET("/", homePage)
-	app.POST("/auth/register", register)
-	app.POST("/auth/login", login)
-	app.POST("/auth/logout", logout)
 
-	// Protected routes (require authentication)
-	app.GET("/users", getUsers, authMiddleware)
-	app.GET("/users/:id", getUser, authMiddleware)
-	app.PUT("/users/:id", updateUser, authMiddleware)
-	app.DELETE("/users/:id", deleteUser, authMiddleware, adminMiddleware)
-	app.GET("/profile", getProfile, authMiddleware)
-	app.PUT("/profile", updateProfile, authMiddleware)
+	// API v1 group
+	v1Group := app.Group("/api/v1")
+	{
+		// Auth group - no authentication required
+		authGroup := v1Group.Group("/auth")
+		{
+			authGroup.POST("/register", register)
+			authGroup.POST("/login", login)
+			authGroup.POST("/logout", logout)
+		}
 
-	// Admin only routes
-	app.GET("/admin/users", adminGetUsers, authMiddleware, adminMiddleware)
-	app.PATCH("/admin/users/:id/activate", activateUser, authMiddleware, adminMiddleware)
-	app.PATCH("/admin/users/:id/deactivate", deactivateUser, authMiddleware, adminMiddleware)
+		// User profile routes - require authentication
+		profileGroup := v1Group.Group("/profile", authMiddleware)
+		{
+			profileGroup.GET("/", getProfile)
+			profileGroup.PUT("/", updateProfile)
+		}
+
+		// User management routes - require authentication
+		usersGroup := v1Group.Group("/users", authMiddleware)
+		{
+			usersGroup.GET("/", getUsers)
+			usersGroup.GET("/:id", getUser)
+			usersGroup.PUT("/:id", updateUser)
+			usersGroup.DELETE("/:id", deleteUser, adminMiddleware) // Admin only
+		}
+
+		// Admin routes - require authentication and admin role
+		adminGroup := v1Group.Group("/admin", authMiddleware, adminMiddleware)
+		{
+			adminUsersGroup := adminGroup.Group("/users")
+			{
+				adminUsersGroup.GET("/", adminGetUsers)
+				adminUsersGroup.PATCH("/:id/activate", activateUser)
+				adminUsersGroup.PATCH("/:id/deactivate", deactivateUser)
+			}
+
+			// Health and stats for admins
+			adminGroup.GET("/stats", func(c *hikari.Context) {
+				activeUsers := 0
+				for _, user := range users { // users slice variable
+					if user.Active {
+						activeUsers++
+					}
+				}
+
+				c.JSON(http.StatusOK, hikari.H{
+					"total_users":    len(users), // users slice variable
+					"active_users":   activeUsers,
+					"inactive_users": len(users) - activeUsers, // users slice variable
+					"sessions":       len(sessions),
+				})
+			})
+		}
+
+		// Health check
+		v1Group.GET("/health", func(c *hikari.Context) {
+			c.JSON(http.StatusOK, hikari.H{
+				"status":    "healthy",
+				"timestamp": time.Now().Format(time.RFC3339),
+				"service":   "user-management",
+			})
+		})
+	}
 
 	fmt.Println("🚀 User Management Server running on http://localhost:8081")
+	fmt.Println("📋 API endpoints available at /api/v1")
 	app.ListenAndServe()
 }
 
 func homePage(c *hikari.Context) {
 	c.JSON(http.StatusOK, hikari.H{
-		"message": "User Management API",
+		"message": "User Management API v1",
 		"version": "1.0.0",
 		"endpoints": hikari.H{
-			"POST /auth/register":               "Register new user",
-			"POST /auth/login":                  "Login user",
-			"POST /auth/logout":                 "Logout user",
-			"GET /users":                        "List users (authenticated)",
-			"GET /users/:id":                    "Get user by ID (authenticated)",
-			"PUT /users/:id":                    "Update user (authenticated)",
-			"DELETE /users/:id":                 "Delete user (admin only)",
-			"GET /profile":                      "Get current user profile",
-			"PUT /profile":                      "Update current user profile",
-			"GET /admin/users":                  "Admin: List all users",
-			"PATCH /admin/users/:id/activate":   "Admin: Activate user",
-			"PATCH /admin/users/:id/deactivate": "Admin: Deactivate user",
+			"POST /api/v1/auth/register":               "Register new user",
+			"POST /api/v1/auth/login":                  "Login user",
+			"POST /api/v1/auth/logout":                 "Logout user",
+			"GET /api/v1/users":                        "List users (authenticated)",
+			"GET /api/v1/users/:id":                    "Get user by ID (authenticated)",
+			"PUT /api/v1/users/:id":                    "Update user (authenticated)",
+			"DELETE /api/v1/users/:id":                 "Delete user (admin only)",
+			"GET /api/v1/profile":                      "Get current user profile",
+			"PUT /api/v1/profile":                      "Update current user profile",
+			"GET /api/v1/admin/users":                  "Admin: List all users",
+			"PATCH /api/v1/admin/users/:id/activate":   "Admin: Activate user",
+			"PATCH /api/v1/admin/users/:id/deactivate": "Admin: Deactivate user",
+			"GET /api/v1/admin/stats":                  "Admin: Get system statistics",
+			"GET /api/v1/health":                       "Health check",
 		},
 	})
 }
