@@ -1,18 +1,21 @@
 # User Management Example
 
-Complete user management system with authentication and authorization using Hikari-Go.
+Complete user management system with authentication, authorization and advanced route grouping using Hikari-Go.
 
 **Language / Idioma:** [English](README.md) | [Português Brasil](README.pt-BR.md)
 
 ## Features
 
-- Registration and login system
-- Token-based authentication
-- Role-based authorization (user/admin)
-- Custom authentication middleware
-- Protected endpoints
-- Data validation
-- Password hashing
+- 🔐 Registration and login system
+- 🎫 Token-based authentication
+- 👑 Role-based authorization (user/admin)
+- 🛡️ Custom authentication middleware
+- 🔒 Protected endpoints with hierarchical access
+- ✅ Data validation and sanitization
+- 🔒 Password hashing with SHA-256
+- 📊 Admin statistics and monitoring
+- 🏗️ Organized route groups structure
+- 🩺 Health check endpoint
 
 ## How to run
 
@@ -22,6 +25,34 @@ go run main.go
 ```
 
 The server will start at `http://localhost:8081`
+
+## API Structure
+
+The API uses a hierarchical group structure for organized access control:
+
+```
+/                    → API information
+/api/v1/
+├── /health          → Health check
+├── /auth/           [PUBLIC]
+│   ├── POST /register → Register user
+│   ├── POST /login    → Login
+│   └── POST /logout   → Logout
+├── /profile/        [AUTH REQUIRED]
+│   ├── GET /        → Get own profile
+│   └── PUT /        → Update own profile
+├── /users/          [AUTH REQUIRED]
+│   ├── GET /        → List active users
+│   ├── GET /:id     → Get user by ID
+│   ├── PUT /:id     → Update user (own or admin)
+│   └── DELETE /:id  → Delete user (admin only)
+└── /admin/          [ADMIN REQUIRED]
+    ├── GET /stats   → System statistics
+    └── /users/
+        ├── GET /    → List all users (including inactive)
+        ├── PATCH /:id/activate   → Activate user
+        └── PATCH /:id/deactivate → Deactivate user
+```
 
 ## Default Users
 
@@ -40,9 +71,17 @@ The server will start at `http://localhost:8081`
 ### GET /
 Information about the API and list of available endpoints.
 
+### GET /api/v1/health
+Health check endpoint for monitoring.
+
+**Example:**
+```bash
+curl http://localhost:8081/api/v1/health
+```
+
 ### Authentication
 
-#### POST /auth/register
+#### POST /api/v1/auth/register
 Registers a new user.
 
 **Body:**
@@ -54,8 +93,15 @@ Registers a new user.
 }
 ```
 
-#### POST /auth/login
-Logs in a user.
+**Example:**
+```bash
+curl -X POST http://localhost:8081/api/v1/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"username":"testuser","email":"test@example.com","password":"secure123"}'
+```
+
+#### POST /api/v1/auth/login
+Logs in a user and returns an authentication token.
 
 **Body:**
 ```json
@@ -65,37 +111,174 @@ Logs in a user.
 }
 ```
 
-**Response:**
+**Example:**
+```bash
+curl -X POST http://localhost:8081/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"admin","password":"admin123"}'
+```
+
+#### POST /api/v1/auth/logout
+Logs out the current user (invalidates token).
+
+**Headers:**
+```
+Authorization: Bearer <token>
+```
+
+**Example:**
+```bash
+curl -X POST http://localhost:8081/api/v1/auth/logout \
+  -H "Authorization: Bearer <your-token>"
+```
+
+### Profile Management
+
+#### GET /api/v1/profile
+Returns the current user's profile information.
+
+**Headers:**
+```
+Authorization: Bearer <token>
+```
+
+**Example:**
+```bash
+curl http://localhost:8081/api/v1/profile \
+  -H "Authorization: Bearer <your-token>"
+```
+
+#### PUT /api/v1/profile
+Updates the current user's profile.
+
+**Headers:**
+```
+Authorization: Bearer <token>
+```
+
+**Body:**
 ```json
 {
-  "message": "Login successful",
-  "token": "your-auth-token",
-  "user": {
-    "id": 1,
-    "username": "admin",
-    "email": "admin@example.com",
-    "role": "admin"
-  }
+  "email": "newemail@example.com"
 }
 ```
 
-#### POST /auth/logout
-Logs out the current user.
+### User Management
+
+#### GET /api/v1/users
+Lists all active users (authentication required).
 
 **Headers:**
 ```
-Authorization: Bearer your-auth-token
+Authorization: Bearer <token>
 ```
 
-### Users (Requires Authentication)
+#### GET /api/v1/users/:id
+Gets a specific user by ID (authentication required).
 
-#### GET /users
-Lists active users.
+#### PUT /api/v1/users/:id
+Updates a user. Users can only update themselves unless they are admin.
 
-**Headers:**
+#### DELETE /api/v1/users/:id
+Deletes a user (admin only).
+
+### Admin Endpoints
+
+#### GET /api/v1/admin/stats
+Returns system statistics (admin only).
+
+**Example Response:**
+```json
+{
+  "total_users": 10,
+  "active_users": 8,
+  "inactive_users": 2,
+  "sessions": 3
+}
 ```
-Authorization: Bearer your-auth-token
+
+#### GET /api/v1/admin/users
+Lists all users including inactive ones (admin only).
+
+#### PATCH /api/v1/admin/users/:id/activate
+Activates a user account (admin only).
+
+#### PATCH /api/v1/admin/users/:id/deactivate
+Deactivates a user account (admin only).
+
+## Code Structure
+
+### Route Groups with Middleware Hierarchy
+
+The application demonstrates advanced route grouping with cascading middleware:
+
+```go
+// API v1 group
+v1Group := app.Group("/api/v1")
+{
+    // Public auth group
+    authGroup := v1Group.Group("/auth")
+    {
+        authGroup.POST("/register", register)
+        authGroup.POST("/login", login)
+        authGroup.POST("/logout", logout)
+    }
+
+    // Protected profile group
+    profileGroup := v1Group.Group("/profile", authMiddleware)
+    {
+        profileGroup.GET("/", getProfile)
+        profileGroup.PUT("/", updateProfile)
+    }
+
+    // Protected user management
+    usersGroup := v1Group.Group("/users", authMiddleware)
+    {
+        usersGroup.GET("/", getUsers)
+        usersGroup.DELETE("/:id", deleteUser, adminMiddleware) // Additional admin check
+    }
+
+    // Admin-only group (auth + admin middleware)
+    adminGroup := v1Group.Group("/admin", authMiddleware, adminMiddleware)
+    {
+        adminGroup.GET("/stats", getStats)
+
+        adminUsersGroup := adminGroup.Group("/users")
+        {
+            adminUsersGroup.PATCH("/:id/activate", activateUser)
+            adminUsersGroup.PATCH("/:id/deactivate", deactivateUser)
+        }
+    }
+}
 ```
+
+### Middleware Stack
+1. **Authentication Middleware**: Validates JWT tokens
+2. **Admin Middleware**: Checks for admin role (applied after auth)
+3. **JSON Middleware**: Sets content-type for responses
+
+## Security Features
+
+- Password hashing using SHA-256
+- Token-based authentication
+- Role-based access control
+- Input validation and sanitization
+- Protected admin endpoints
+
+## Testing
+
+Use the provided HTTP test file:
+```
+examples/user-management/requests/test-sequence.http
+```
+
+The test sequence includes:
+1. User registration
+2. Login scenarios (admin, user, new user)
+3. Profile management
+4. User management operations
+5. Admin-only operations
+6. Access control testing
 
 #### GET /users/:id
 Gets information about a specific user.

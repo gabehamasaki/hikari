@@ -2,20 +2,39 @@
 
 **Language / Idioma:** [English](README.md) | [Português Brasil](README.pt-BR.md)
 
-This folder contains practical examples demonstrating the features of the Hikari-Go framework. Each example is a complete and functional application that you can run and study.
+This folder contains practical examples demonstrating the advanced features of the Hikari-Go framework. Each example is a complete and functional application showcasing modern API development patterns with route groups, middleware, and organized structure.
+
+## 🆕 Framework Features Demonstrated
+
+- **🏗️ Route Groups:** Hierarchical route organization with shared prefixes
+- **🔧 Middleware Stack:** Global and group-specific middleware application
+- **📋 API Versioning:** Professional API structure with `/api/v1` pattern
+- **🩺 Health Checks:** Monitoring endpoints for production readiness
+- **🔄 Backward Compatibility:** Smooth migration paths
+- **🎯 Pattern Normalization:** Automatic route pattern standardization
 
 ## 📋 Examples List
 
 ### 1. [Todo App](./todo-app/)
-**Port:** `:8080`
+**Port:** `:8080` | **API:** `/api/v1`
 
-A complete REST API for task management demonstrating:
-- Basic CRUD (Create, Read, Update, Delete)
-- Dynamic route parameters
-- Query parameters for filtering
-- Custom middleware (CORS)
-- Data validation
-- Organized JSON structures
+A modern REST API for task management demonstrating:
+- ✅ Complete CRUD operations with route groups
+- 🎯 Dynamic route parameters (`:id`)
+- 🔍 Query parameters for filtering (`?status=completed`)
+- 🌐 Global CORS middleware
+- 📝 Data validation and error handling
+- 🏗️ Organized route groups (`/api/v1/todos`)
+- 🩺 Health check endpoint
+- 📊 JSON response standardization
+
+**Route Structure:**
+```
+/api/v1/
+├── /todos/     → Complete todo management
+├── /health     → Service health check
+└── /           → API information
+```
 
 **How to run:**
 ```bash
@@ -24,16 +43,28 @@ go run main.go
 ```
 
 ### 2. [User Management](./user-management/)
-**Port:** `:8081`
+**Port:** `:8081` | **API:** `/api/v1`
 
-Complete user management system with authentication and authorization:
-- Registration and login system
-- Token-based authentication
-- Authentication middleware
-- Role-based access control (user/admin)
-- Password hashing
-- Data validation
-- Protected endpoints
+Advanced user management system with hierarchical access control:
+- 🔐 Complete authentication system (register/login/logout)
+- 🎫 JWT-like token-based authentication
+- 🛡️ Cascading middleware (auth → admin)
+- 👑 Role-based access control (user/admin)
+- 🔒 Password hashing and security
+- 📊 Admin statistics and monitoring
+- 🏗️ Hierarchical route groups with inherited middleware
+- 🩺 Health check and system monitoring
+
+**Route Structure:**
+```
+/api/v1/
+├── /auth/      → Public authentication
+├── /profile/   → [AUTH] Profile management
+├── /users/     → [AUTH] User operations
+└── /admin/     → [ADMIN] Admin-only operations
+    ├── /stats  → System statistics
+    └── /users/ → Advanced user management
+```
 
 **How to run:**
 ```bash
@@ -46,16 +77,29 @@ go run main.go
 - User: `john/password123`
 
 ### 3. [File Upload](./file-upload/)
-**Port:** `:8082`
+**Port:** `:8082` | **API:** `/api/v1`
 
-File upload and management system:
-- Single file upload
-- Multiple file upload
-- File download
-- Static file serving
-- File type and size validation
-- File listing and removal
-- Health check
+Complete file upload and management system demonstrating:
+- 📤 Single and multiple file upload with validation
+- 📋 File metadata management and listing
+- 📥 Secure file download with proper headers
+- 🌐 Static file serving with security checks
+- ✅ File type and size validation (10MB limit)
+- 🗑️ File deletion and cleanup
+- 📊 Upload statistics and system information
+- 🏗️ Organized route groups (`/files`, `/upload`)
+- 🩺 Health check with storage validation
+
+**Route Structure:**
+```
+/api/v1/
+├── /files/     → File management operations
+├── /upload/    → Upload operations (single/multiple)
+├── /download/  → Secure file download
+├── /health     → Health check with storage status
+└── /info       → System statistics
+/static/*       → Direct static file serving
+```
 
 **How to run:**
 ```bash
@@ -81,46 +125,54 @@ cd examples/file-upload && go run main.go
 ```
 
 **Access URLs:**
-- Todo App: http://localhost:8080
-- User Management: http://localhost:8081
-- File Upload: http://localhost:8082
+- Todo App: http://localhost:8080/api/v1
+- User Management: http://localhost:8081/api/v1
+- File Upload: http://localhost:8082/api/v1
 
-## 📊 Demonstrated Features
+## 📊 Advanced Framework Features Demonstrated
 
-### Routing & HTTP Methods
-- `GET`, `POST`, `PUT`, `PATCH`, `DELETE`
-- Route parameters (`:id`, `:name`)
-- Query parameters (`?status=completed`)
-- Dynamic paths (`/static/*`)
+### 🏗️ Route Groups & Organization
+```go
+// Hierarchical route groups with shared middleware
+v1Group := app.Group("/api/v1")
+{
+    authGroup := v1Group.Group("/auth")           // Public routes
+    protectedGroup := v1Group.Group("/users", authMiddleware)  // Auth required
+    adminGroup := v1Group.Group("/admin", authMiddleware, adminMiddleware) // Admin only
+}
+```
 
-### Middlewares
-- Global middleware (`app.Use()`)
-- Custom middleware (CORS)
-- Authentication middleware
-- Authorization middleware
-- Middleware chaining
+### 🔧 Middleware Stack Patterns
+- **Global Middleware:** Applied to all routes (`app.Use()`)
+- **Group Middleware:** Applied to route groups with inheritance
+- **Route Middleware:** Applied to specific routes
+- **Cascading Middleware:** Multiple middleware layers (auth → admin)
+
+### 🎯 Modern API Patterns
+- **API Versioning:** `/api/v1` structure for evolution
+- **Resource Grouping:** Logical endpoint organization
+- **Health Checks:** Production-ready monitoring endpoints
+- **Error Standardization:** Consistent error response formats
+
+### 🔄 Pattern Normalization
+- Automatic route pattern cleanup (`//` → `/`)
+- Consistent trailing slash handling
+- Parameter validation and security
 
 ### Request/Response Handling
-- JSON binding (`c.Bind()`)
-- JSON responses (`c.JSON()`)
-- Form data handling
-- File uploads (multipart/form-data)
-- Custom headers
-- Custom status codes
+- JSON binding (`c.Bind()`) with validation
+- Structured JSON responses (`c.JSON()`)
+- File uploads (multipart/form-data) with security
+- Custom headers and status codes
+- Wildcard parameters (`*`) handling
 
-### Validation & Security
-- Input validation
-- Password hashing
-- Token authentication
-- Role-based authorization
-- File type validation
-- Directory traversal prevention
-
-### Error Handling
-- HTTP error handling
-- Structured error responses
-- Built-in recovery middleware
-- Contextual logging
+### Security & Validation
+- Input validation and sanitization
+- Password hashing (SHA-256)
+- Token-based authentication
+- Role-based authorization with hierarchy
+- File type and size validation
+- Path traversal protection
 
 ## 🛠️ Structure of Each Example
 
@@ -128,29 +180,49 @@ Each example application contains:
 
 ```
 example-name/
-├── main.go          # Main application code
-├── README.md        # Specific documentation
-└── ...             # Additional files when needed
+├── main.go                    # Main application with route groups
+├── README.md                  # Comprehensive documentation
+├── README.pt-BR.md           # Portuguese documentation
+└── requests/
+    └── test-sequence.http     # Complete API testing sequences
 ```
 
-## 📚 How to Study the Examples
+## 📚 Learning Path
 
-1. **Start with Todo App** - It's the simplest and shows basic concepts
-2. **Move to User Management** - Adds authentication and authorization
-3. **Finish with File Upload** - Demonstrates file manipulation and uploads
+### 1. **Start with Todo App** (Basic Concepts)
+- Route groups and REST API patterns
+- Global middleware application
+- Basic CRUD with validation
+- Health monitoring
 
-For each example:
-1. Read the specific README
-2. Examine the `main.go` code
-3. Run the application
-4. Test the endpoints with curl or web interface
-5. Try modifying the code
+### 2. **User Management** (Advanced Security)
+- Hierarchical route groups
+- Cascading middleware (auth → admin)
+- Token authentication
+- Role-based access control
+- Protected endpoints
+
+### 3. **File Upload** (File Operations)
+- File handling and validation
+- Multiple upload strategies
+- Static file serving with security
+- System monitoring and stats
+
+### 📝 Testing the Examples
+
+Each example includes comprehensive HTTP test files:
+```bash
+# Open in VS Code and execute requests sequentially
+examples/todo-app/requests/test-sequence.http
+examples/user-management/requests/test-sequence.http
+examples/file-upload/requests/test-sequence.http
+```
 
 ## 🔧 Requirements
 
-- Go 1.24.4 or higher
+- Go 1.21+ or higher
 - Dependencies specified in `go.mod`:
-  - `go.uber.org/zap` (logging)
+  - `go.uber.org/zap` (structured logging)
 
 ## 📝 Development Notes
 
