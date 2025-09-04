@@ -17,6 +17,8 @@ type App struct {
 	middlewares []Middleware
 	server      *http.Server
 	logger      *zap.Logger
+
+	requestTimeout time.Duration
 }
 
 func New(addr string) *App {
@@ -29,10 +31,11 @@ func New(addr string) *App {
 	logger, _ := config.Build()
 
 	return &App{
-		addr:        addr,
-		router:      NewRouter(),
-		middlewares: []Middleware{},
-		logger:      logger,
+		addr:           addr,
+		router:         NewRouter(),
+		middlewares:    []Middleware{},
+		logger:         logger,
+		requestTimeout: 30 * time.Second, // Default request timeout
 		server: &http.Server{
 			Addr:         addr,
 			ReadTimeout:  5 * time.Second,
@@ -67,6 +70,9 @@ func (a *App) Use(middleware Middleware) {
 
 func (a *App) buildHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		reqCtx, cancel := context.WithTimeout(req.Context(), a.requestTimeout)
+		defer cancel()
+
 		routerHandler := func(c *Context) {
 			a.router.serveContext(c)
 		}
@@ -91,6 +97,9 @@ func (a *App) buildHandler() http.Handler {
 			Request: req,
 			Params:  make(map[string]string),
 			Logger:  a.logger,
+
+			Context: reqCtx,
+			storage: make(map[string]interface{}),
 		}
 
 		handler(ctx)
@@ -144,4 +153,8 @@ func (a *App) ListenAndServe() {
 func (a *App) Shutdown(ctx context.Context) error {
 	defer a.logger.Sync() // Flush any remaining logs
 	return a.server.Shutdown(ctx)
+}
+
+func (a *App) SetRequestTimeout(d time.Duration) {
+	a.requestTimeout = d
 }

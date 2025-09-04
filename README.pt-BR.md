@@ -11,11 +11,13 @@
 - 📝 **Logging Estruturado** - Logs coloridos bonitos com o logger Zap da Uber
 - 🔗 **Parâmetros de Rota** - Suporte para parâmetros de rota dinâmicos (`:param`) e wildcards (`*`)
 - 🧩 **Suporte a Middleware** - Sistema extensível de middleware global e por rota
-- 🎯 **Baseado em Contexto** - Contexto rico com binding JSON, query params e mais
+- 🎯 **Baseado em Contexto** - Contexto rico com binding JSON, query params, armazenamento e interface de contexto Go
 - 🛑 **Desligamento Gracioso** - Manipulação adequada de desligamento do servidor com sinais
 - 📊 **Logging de Requisições** - Logging automático contextual com timing e User-Agent
 - 📁 **Servidor de Arquivos** - Servir arquivos estáticos facilmente
-- ⚙️ **Timeouts Configurados** - Timeouts de leitura e escrita pré-configurados (5s)
+- ⚙️ **Timeouts Configurados** - Timeouts de leitura e escrita pré-configurados (5s) e timeouts de requisição configuráveis
+- 💾 **Armazenamento de Contexto** - Sistema integrado de armazenamento chave-valor com acesso thread-safe
+- ⏱️ **Gerenciamento de Contexto** - Suporte completo à interface context.Context do Go com cancelamento e timeouts
 
 ## 🚀 Início Rápido
 
@@ -63,6 +65,9 @@ Visite `http://localhost:8080/hello/world` para ver sua app em ação!
 
 ```go
 app := hikari.New(":8080")
+
+// Configurar timeout de requisição (padrão: 30 segundos)
+app.SetRequestTimeout(60 * time.Second)
 ```
 
 ### Métodos HTTP
@@ -193,6 +198,58 @@ method := c.Method()
 path := c.Path()
 ```
 
+#### Armazenamento de Contexto
+```go
+// Armazenar valores no contexto (thread-safe)
+c.Set("user_id", 123)
+c.Set("username", "joao_silva")
+
+// Recuperar valores do contexto
+userID, exists := c.Get("user_id")
+if exists {
+    // Usar o valor
+}
+
+// Recuperar com helpers de assertiva de tipo
+userID := c.GetInt("user_id")      // Retorna 0 se não encontrado ou tipo incorreto
+username := c.GetString("username") // Retorna "" se não encontrado ou tipo incorreto
+isActive := c.GetBool("is_active")  // Retorna false se não encontrado ou tipo incorreto
+
+// Must get (retorna nil e registra erro se não encontrado)
+userID := c.MustGet("user_id")
+
+// Obter todas as chaves armazenadas
+keys := c.Keys()
+```
+
+#### Interface de Contexto (context.Context do Go)
+```go
+// Criar contexto com timeout
+ctx, cancel := c.WithTimeout(5 * time.Second)
+defer cancel()
+
+// Criar contexto com cancelamento
+ctx, cancel := c.WithCancel()
+defer cancel()
+
+// Criar contexto com valor
+ctx := c.WithValue("trace_id", "abc123")
+
+// Acessar valores do contexto
+traceID := c.Value("trace_id")
+
+// Verificar se contexto está terminado ou tem erro
+select {
+case <-c.Done():
+    if err := c.Err(); err != nil {
+        c.Logger.Error("Contexto cancelado", zap.Error(err))
+        return
+    }
+default:
+    // Continuar processamento
+}
+```
+
 ### Middleware
 
 Crie e use middleware personalizado - aplicável globalmente ou por rota específica:
@@ -238,6 +295,44 @@ app.Use(AuthMiddleware())
 app.GET("/public", publicHandler) // Sem middleware
 app.GET("/protected", protectedHandler, AuthMiddleware()) // Só com auth
 app.POST("/admin", adminHandler, AuthMiddleware(), AdminMiddleware()) // Múltiplos middlewares
+```
+
+#### Middleware com Armazenamento de Contexto
+Você pode usar o sistema de armazenamento de contexto em middleware para passar dados entre middlewares e handlers:
+
+```go
+// Middleware de extração de usuário
+func UserMiddleware() hikari.Middleware {
+    return func(next hikari.HandlerFunc) hikari.HandlerFunc {
+        return func(c *hikari.Context) {
+            token := c.Request.Header.Get("Authorization")
+            if token != "" {
+                // Extrair usuário do token (pseudo código)
+                user := extractUserFromToken(token)
+                c.Set("user", user)
+                c.Set("user_id", user.ID)
+                c.Set("is_authenticated", true)
+            }
+            next(c)
+        }
+    }
+}
+
+// Usando valores armazenados em handlers
+app.GET("/profile", func(c *hikari.Context) {
+    if !c.GetBool("is_authenticated") {
+        c.JSON(http.StatusUnauthorized, hikari.H{"error": "Não autenticado"})
+        return
+    }
+
+    user := c.MustGet("user")
+    userID := c.GetInt("user_id")
+
+    c.JSON(http.StatusOK, hikari.H{
+        "user": user,
+        "user_id": userID,
+    })
+}, UserMiddleware())
 ```
 
 ### Recursos Integrados
@@ -332,10 +427,15 @@ func AuthMiddleware() hikari.Middleware {
 func main() {
     app := hikari.New(":8080")
 
+    // Configurar timeout de requisição
+    app.SetRequestTimeout(60 * time.Second)
+
     // Middleware global
     app.Use(func(next hikari.HandlerFunc) hikari.HandlerFunc {
         return func(c *hikari.Context) {
             c.SetHeader("Content-Type", "application/json")
+            // Armazenar tempo de início da requisição para medição
+            c.Set("start_time", time.Now())
             next(c)
         }
     })
@@ -366,6 +466,21 @@ func main() {
     // Rota para resposta de texto
     app.GET("/health", func(c *hikari.Context) {
         c.String(http.StatusOK, "OK - Servidor funcionando perfeitamente!")
+    })
+
+    // Exemplo de timeout de contexto
+    app.GET("/slow", func(c *hikari.Context) {
+        // Criar contexto com timeout de 2 segundos
+        ctx, cancel := c.WithTimeout(2 * time.Second)
+        defer cancel()
+
+        // Simular operação lenta
+        select {
+        case <-time.After(1 * time.Second):
+            c.JSON(http.StatusOK, hikari.H{"message": "Operação concluída"})
+        case <-ctx.Done():
+            c.JSON(http.StatusRequestTimeout, hikari.H{"error": "Operação expirou"})
+        }
     })
 
     app.ListenAndServe()

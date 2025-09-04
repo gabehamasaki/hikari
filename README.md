@@ -11,11 +11,13 @@
 - 📝 **Structured Logging** - Beautiful colored logs with Uber's Zap logger
 - 🔗 **Route Parameters** - Support for dynamic route parameters (`:param`) and wildcards (`*`)
 - 🧩 **Middleware Support** - Extensible middleware system (global and per-route)
-- 🎯 **Context-based** - Rich context with JSON binding, query params, and more
+- 🎯 **Context-based** - Rich context with JSON binding, query params, storage, and Go context interface
 - 🛑 **Graceful Shutdown** - Proper server shutdown handling with signals
 - 📊 **Request Logging** - Automatic contextual logging with timing and User-Agent
 - 📁 **File Server** - Serve static files easily
-- ⚙️ **Configured Timeouts** - Pre-configured read/write timeouts (5s)
+- ⚙️ **Configured Timeouts** - Pre-configured read/write timeouts (5s) and configurable request timeouts
+- 💾 **Context Storage** - Built-in key-value storage system with thread-safe access
+- ⏱️ **Context Management** - Full Go context.Context interface support with cancellation and timeouts
 
 ## 🚀 Quick Start
 
@@ -63,6 +65,9 @@ Visit `http://localhost:8080/hello/world` to see your app in action!
 
 ```go
 app := hikari.New(":8080")
+
+// Configure request timeout (default: 30 seconds)
+app.SetRequestTimeout(60 * time.Second)
 ```
 
 ### HTTP Methods
@@ -193,6 +198,58 @@ method := c.Method()
 path := c.Path()
 ```
 
+#### Context Storage
+```go
+// Store values in context (thread-safe)
+c.Set("user_id", 123)
+c.Set("username", "john_doe")
+
+// Retrieve values from context
+userID, exists := c.Get("user_id")
+if exists {
+    // Use the value
+}
+
+// Retrieve with type assertion helpers
+userID := c.GetInt("user_id")     // Returns 0 if not found or wrong type
+username := c.GetString("username") // Returns "" if not found or wrong type
+isActive := c.GetBool("is_active")  // Returns false if not found or wrong type
+
+// Must get (returns nil and logs error if not found)
+userID := c.MustGet("user_id")
+
+// Get all stored keys
+keys := c.Keys()
+```
+
+#### Context Interface (Go's context.Context)
+```go
+// Create context with timeout
+ctx, cancel := c.WithTimeout(5 * time.Second)
+defer cancel()
+
+// Create context with cancellation
+ctx, cancel := c.WithCancel()
+defer cancel()
+
+// Create context with value
+ctx := c.WithValue("trace_id", "abc123")
+
+// Access context values
+traceID := c.Value("trace_id")
+
+// Check if context is done or has error
+select {
+case <-c.Done():
+    if err := c.Err(); err != nil {
+        c.Logger.Error("Context cancelled", zap.Error(err))
+        return
+    }
+default:
+    // Continue processing
+}
+```
+
 ### Middleware
 
 Create and use custom middleware - applicable globally or per specific route:
@@ -238,6 +295,44 @@ app.Use(AuthMiddleware())
 app.GET("/public", publicHandler) // No middleware
 app.GET("/protected", protectedHandler, AuthMiddleware()) // Only auth
 app.POST("/admin", adminHandler, AuthMiddleware(), AdminMiddleware()) // Multiple middlewares
+```
+
+#### Middleware with Context Storage
+You can use the context storage system in middleware to pass data between middlewares and handlers:
+
+```go
+// User extraction middleware
+func UserMiddleware() hikari.Middleware {
+    return func(next hikari.HandlerFunc) hikari.HandlerFunc {
+        return func(c *hikari.Context) {
+            token := c.Request.Header.Get("Authorization")
+            if token != "" {
+                // Extract user from token (pseudo code)
+                user := extractUserFromToken(token)
+                c.Set("user", user)
+                c.Set("user_id", user.ID)
+                c.Set("is_authenticated", true)
+            }
+            next(c)
+        }
+    }
+}
+
+// Using stored values in handlers
+app.GET("/profile", func(c *hikari.Context) {
+    if !c.GetBool("is_authenticated") {
+        c.JSON(http.StatusUnauthorized, hikari.H{"error": "Not authenticated"})
+        return
+    }
+
+    user := c.MustGet("user")
+    userID := c.GetInt("user_id")
+
+    c.JSON(http.StatusOK, hikari.H{
+        "user": user,
+        "user_id": userID,
+    })
+}, UserMiddleware())
 ```
 
 ### Built-in Features
@@ -332,10 +427,15 @@ func AuthMiddleware() hikari.Middleware {
 func main() {
     app := hikari.New(":8080")
 
+    // Configure request timeout
+    app.SetRequestTimeout(60 * time.Second)
+
     // Global middleware
     app.Use(func(next hikari.HandlerFunc) hikari.HandlerFunc {
         return func(c *hikari.Context) {
             c.SetHeader("Content-Type", "application/json")
+            // Store request start time for timing
+            c.Set("start_time", time.Now())
             next(c)
         }
     })
@@ -366,6 +466,21 @@ func main() {
     // Text response route
     app.GET("/health", func(c *hikari.Context) {
         c.String(http.StatusOK, "OK - Server is running perfectly!")
+    })
+
+    // Context timeout example
+    app.GET("/slow", func(c *hikari.Context) {
+        // Create a context with 2 second timeout
+        ctx, cancel := c.WithTimeout(2 * time.Second)
+        defer cancel()
+
+        // Simulate slow operation
+        select {
+        case <-time.After(1 * time.Second):
+            c.JSON(http.StatusOK, hikari.H{"message": "Operation completed"})
+        case <-ctx.Done():
+            c.JSON(http.StatusRequestTimeout, hikari.H{"error": "Operation timed out"})
+        }
     })
 
     app.ListenAndServe()

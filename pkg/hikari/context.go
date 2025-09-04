@@ -1,52 +1,25 @@
 package hikari
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"sync"
+	"time"
 
 	"go.uber.org/zap"
 )
 
-// ResponseWriter wrapper to capture status code
-type responseWriter struct {
-	http.ResponseWriter
-	statusCode int
-	written    bool
-}
-
-func newResponseWriter(w http.ResponseWriter) *responseWriter {
-	return &responseWriter{
-		ResponseWriter: w,
-		statusCode:     200, // Default status code
-		written:        false,
-	}
-}
-
-func (rw *responseWriter) WriteHeader(code int) {
-	if !rw.written {
-		rw.statusCode = code
-		rw.written = true
-		rw.ResponseWriter.WriteHeader(code)
-	}
-}
-
-func (rw *responseWriter) Write(data []byte) (int, error) {
-	if !rw.written {
-		rw.WriteHeader(200) // Default to 200 if WriteHeader wasn't called
-	}
-	return rw.ResponseWriter.Write(data)
-}
-
-func (rw *responseWriter) StatusCode() int {
-	return rw.statusCode
-}
-
 type Context struct {
+	context.Context
 	Writer  *responseWriter
 	Request *http.Request
 	Params  map[string]string
 	Logger  *zap.Logger
+
+	storage      map[string]interface{}
+	mutexStorage sync.RWMutex
 }
 
 func (c *Context) JSON(status int, v any) {
@@ -107,4 +80,97 @@ func (c *Context) GetStatus() int {
 
 func (c *Context) File(filePath string) {
 	http.ServeFile(c.Writer, c.Request, filePath)
+}
+
+func (c *Context) Set(key string, value interface{}) {
+	c.mutexStorage.Lock()
+	defer c.mutexStorage.Unlock()
+
+	c.storage[key] = value
+}
+
+func (c *Context) Get(key string) (interface{}, bool) {
+	c.mutexStorage.RLock()
+	defer c.mutexStorage.RUnlock()
+
+	value, exists := c.storage[key]
+	return value, exists
+}
+
+func (c *Context) MustGet(key string) interface{} {
+	c.mutexStorage.RLock()
+	defer c.mutexStorage.RUnlock()
+
+	value, exists := c.storage[key]
+	if !exists {
+		c.Logger.Error("Key not found in context storage", zap.String("key", key))
+		return nil
+	}
+	return value
+}
+
+func (c *Context) GetString(key string) string {
+	if value, exists := c.Get(key); exists {
+		if s, ok := value.(string); ok {
+			return s
+		}
+	}
+	return ""
+}
+
+func (c *Context) GetInt(key string) int {
+	if value, exists := c.Get(key); exists {
+		if i, ok := value.(int); ok {
+			return i
+		}
+	}
+	return 0
+}
+
+func (c *Context) GetBool(key string) bool {
+	if value, exists := c.Get(key); exists {
+		if b, ok := value.(bool); ok {
+			return b
+		}
+	}
+	return false
+}
+
+func (c *Context) Keys() []string {
+	c.mutexStorage.RLock()
+	defer c.mutexStorage.RUnlock()
+
+	if c.storage == nil {
+		return []string{}
+	}
+
+	keys := make([]string, 0, len(c.storage))
+	for key := range c.storage {
+		keys = append(keys, key)
+	}
+	return keys
+}
+
+func (c *Context) WithTimeout(timeout time.Duration) (context.Context, context.CancelFunc) {
+	return context.WithTimeout(c.Context, timeout)
+}
+
+func (c *Context) WithCancel() (context.Context, context.CancelFunc) {
+	return context.WithCancel(c.Context)
+}
+
+func (c *Context) WithValue(key, value interface{}) context.Context {
+	return context.WithValue(c.Context, key, value)
+}
+
+func (c *Context) Value(key interface{}) interface{} {
+	return c.Context.Value(key)
+}
+
+func (c *Context) Done() <-chan struct{} {
+	return c.Context.Done()
+}
+
+func (c *Context) Err() error {
+	return c.Context.Err()
 }
