@@ -13,7 +13,7 @@ import (
 
 type App struct {
 	addr        string
-	router      *Router
+	router      *router
 	middlewares []Middleware
 	server      *http.Server
 	logger      *zap.Logger
@@ -32,7 +32,7 @@ func New(addr string) *App {
 
 	return &App{
 		addr:           addr,
-		router:         NewRouter(),
+		router:         newRouter(),
 		middlewares:    []Middleware{},
 		logger:         logger,
 		requestTimeout: 30 * time.Second, // Default request timeout

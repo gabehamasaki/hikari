@@ -12,17 +12,17 @@ type route struct {
 	middlewares []Middleware
 }
 
-type Router struct {
+type router struct {
 	routes []route
 }
 
-func NewRouter() *Router {
-	return &Router{
+func newRouter() *router {
+	return &router{
 		routes: []route{},
 	}
 }
 
-func (r *Router) handle(method, pattern string, handler HandlerFunc, middlewares ...Middleware) {
+func (r *router) handle(method, pattern string, handler HandlerFunc, middlewares ...Middleware) {
 	r.routes = append(r.routes, route{
 		method:      method,
 		pattern:     pattern,
@@ -40,7 +40,7 @@ func splitPath(p string) []string {
 	return strings.Split(p, "/")
 }
 
-func (r *Router) serveContext(ctx *Context) {
+func (r *router) serveContext(ctx *Context) {
 	for _, rt := range r.routes {
 		if rt.method != ctx.Request.Method {
 			continue
