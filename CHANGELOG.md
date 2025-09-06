@@ -27,12 +27,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 #### WebSocket Context & API
 - **WebSocketContext**: Extends standard Context with WebSocket-specific methods
   - `Send()`: Send raw bytes to the connection
-  - `SendJSON()`: Send JSON messages with automatic marshaling
-  - `SendString()`: Send text messages
+  - `JSON()`: Send JSON messages with automatic marshaling
+  - `String()`: Send text messages
   - `Broadcast()`: Broadcast to all connections in the hub
   - `BroadcastJSON()`: Broadcast JSON messages
   - `SendToConnection()`: Send to specific connection by ID
-  - `BindMessage()`: Bind JSON messages to structs
+  - `Bind()`: Bind JSON messages to structs
 - **Message Type Helpers**: `IsTextMessage()`, `IsBinaryMessage()`, `GetMessage()`
 - **Connection Info**: Access to connection ID, hub name, and connection status
 
@@ -133,9 +133,9 @@ app.WebSocket("/ws/private", "private", privateChatHandler)
 app.WebSocket("/ws/api", "api_hub", func(c *hikari.WebSocketContext) {
     if c.IsTextMessage() {
         var msg ChatMessage
-        if err := c.BindMessage(&msg); err == nil {
+        if err := c.Bind(&msg); err == nil {
             response := ProcessMessage(msg)
-            c.SendJSON(response)
+            c.JSON(response)
         }
     }
 })

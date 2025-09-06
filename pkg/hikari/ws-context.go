@@ -88,7 +88,7 @@ func (wsc *WSContext) GetMessage() string {
 }
 
 // BindMessage faz bind da mensagem JSON para uma estrutura
-func (wsc *WSContext) BindMessage(v interface{}) error {
+func (wsc *WSContext) Bind(v interface{}) error {
 	if !wsc.IsTextMessage() {
 		return fmt.Errorf("message is not text type")
 	}
