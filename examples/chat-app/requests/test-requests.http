@@ -1,0 +1,161 @@
+### Chat App WebSocket & API Tests
+
+# Testar APIs HTTP
+
+### 1. Listar salas disponíveis
+GET http://localhost:8080/api/v1/rooms
+Accept: application/json
+
+###
+
+### 2. Obter estatísticas da sala geral
+GET http://localhost:8080/api/v1/rooms/general/stats
+Accept: application/json
+
+###
+
+### 3. Obter estatísticas da sala de tecnologia
+GET http://localhost:8080/api/v1/rooms/tech/stats
+Accept: application/json
+
+###
+
+### 4. Obter estatísticas da sala VIP
+GET http://localhost:8080/api/v1/rooms/vip/stats
+Accept: application/json
+
+###
+
+### 5. Enviar mensagem para sala geral via HTTP
+POST http://localhost:8080/api/v1/rooms/general/message
+Content-Type: application/json
+
+{
+    "username": "Sistema",
+    "message": "Esta é uma mensagem enviada via API HTTP!"
+}
+
+###
+
+### 6. Enviar mensagem para sala tech via HTTP
+POST http://localhost:8080/api/v1/rooms/tech/message
+Content-Type: application/json
+
+{
+    "username": "Bot",
+    "message": "Discussão sobre tecnologia iniciada!"
+}
+
+###
+
+### 7. Enviar mensagem de anúncio
+POST http://localhost:8080/api/v1/rooms/general/message
+Content-Type: application/json
+
+{
+    "username": "Admin",
+    "message": "🚀 Bem-vindos ao chat Hikari! Este é um exemplo de WebSocket em tempo real."
+}
+
+###
+
+### 8. Teste de mensagem longa
+POST http://localhost:8080/api/v1/rooms/random/message
+Content-Type: application/json
+
+{
+    "username": "TestUser",
+    "message": "Esta é uma mensagem de teste mais longa para verificar como o sistema lida com conteúdo extenso. O framework Hikari suporta WebSocket com funcionalidades completas como broadcast, hubs, e middleware de autenticação."
+}
+
+###
+
+### 9. Teste de caracteres especiais
+POST http://localhost:8080/api/v1/rooms/general/message
+Content-Type: application/json
+
+{
+    "username": "Usuário_Teste",
+    "message": "Teste com emojis 🎉🚀💻 e caracteres especiais: áçãõ, @#$%!"
+}
+
+###
+
+### 10. Página principal (HTML)
+GET http://localhost:8080/
+Accept: text/html
+
+###
+
+### 11. CSS estático
+GET http://localhost:8080/static/style.css
+Accept: text/css
+
+###
+
+### 12. JavaScript estático
+GET http://localhost:8080/static/app.js
+Accept: application/javascript
+
+###
+
+# WebSocket Testing
+#
+# Para testar WebSocket, use ferramentas como:
+# 1. Browser DevTools Console
+# 2. wscat: npm install -g wscat
+# 3. Postman WebSocket
+# 4. A própria interface web em http://localhost:8080
+
+# Exemplos com wscat:
+
+# Conectar à sala geral:
+# wscat -c ws://localhost:8080/ws/general
+
+# Conectar à sala VIP (com token):
+# wscat -c "ws://localhost:8080/ws/vip?token=vip123&username=TestUser"
+
+# Mensagens para enviar via WebSocket:
+
+# Entrar na sala:
+# {"type":"join","username":"TestUser","message":"entrou na sala"}
+
+# Enviar mensagem:
+# {"type":"message","username":"TestUser","message":"Olá pessoal!"}
+
+# Indicar que está digitando:
+# {"type":"typing","username":"TestUser"}
+
+# Sair da sala:
+# {"type":"leave","username":"TestUser","message":"saiu da sala"}
+
+###
+
+### Exemplo de teste de stress - Múltiplas mensagens
+POST http://localhost:8080/api/v1/rooms/general/message
+Content-Type: application/json
+
+{
+    "username": "StressTest",
+    "message": "Mensagem 1 - Teste de stress"
+}
+
+###
+
+POST http://localhost:8080/api/v1/rooms/general/message
+Content-Type: application/json
+
+{
+    "username": "StressTest",
+    "message": "Mensagem 2 - Teste de stress"
+}
+
+###
+
+POST http://localhost:8080/api/v1/rooms/general/message
+Content-Type: application/json
+
+{
+    "username": "StressTest",
+    "message": "Mensagem 3 - Teste de stress"
+}

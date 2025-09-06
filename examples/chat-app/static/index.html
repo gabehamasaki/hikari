@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hikari Chat - Exemplo WebSocket</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>🗨️ Hikari Chat</h1>
+            <p>Exemplo de WebSocket com Hikari Framework</p>
+        </header>
+
+        <div class="main-content">
+            <!-- Login/Setup Panel -->
+            <div id="loginPanel" class="login-panel">
+                <h2>Entrar no Chat</h2>
+                <div class="form-group">
+                    <label for="username">Nome de usuário:</label>
+                    <input type="text" id="username" placeholder="Digite seu nome..." maxlength="20">
+                </div>
+                <div class="form-group">
+                    <label for="roomSelect">Selecionar sala:</label>
+                    <select id="roomSelect">
+                        <option value="general">💬 General</option>
+                        <option value="tech">💻 Tecnologia</option>
+                        <option value="random">🎲 Aleatório</option>
+                        <option value="vip">👑 VIP (Token necessário)</option>
+                    </select>
+                </div>
+                <div class="form-group" id="tokenGroup" style="display: none;">
+                    <label for="vipToken">Token VIP:</label>
+                    <input type="text" id="vipToken" placeholder="Digite o token VIP..." maxlength="50">
+                    <small>Dica: use "vip123" para testar</small>
+                </div>
+                <button id="connectBtn">Conectar</button>
+            </div>
+
+            <!-- Chat Interface -->
+            <div id="chatPanel" class="chat-panel" style="display: none;">
+                <div class="chat-header">
+                    <div class="room-info">
+                        <span id="currentRoom">Sala: General</span>
+                        <span id="userCount" class="user-count">👥 0 usuários</span>
+                    </div>
+                    <div class="connection-status">
+                        <span id="connectionStatus" class="status connected">🟢 Conectado</span>
+                        <button id="disconnectBtn" class="disconnect-btn">Sair</button>
+                    </div>
+                </div>
+
+                <div class="chat-content">
+                    <div id="messages" class="messages"></div>
+                    <div id="typingIndicator" class="typing-indicator"></div>
+                </div>
+
+                <div class="message-input-area">
+                    <div class="input-group">
+                        <input type="text" id="messageInput" placeholder="Digite sua mensagem..." maxlength="1000">
+                        <button id="sendBtn">Enviar</button>
+                    </div>
+                    <div class="input-actions">
+                        <button id="clearBtn" class="action-btn">🗑️ Limpar</button>
+                        <span id="charCount" class="char-count">0/1000</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats Panel -->
+        <div class="stats-panel">
+            <h3>📊 Estatísticas</h3>
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <span class="stat-label">Mensagens enviadas:</span>
+                    <span id="messagesSent" class="stat-value">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Mensagens recebidas:</span>
+                    <span id="messagesReceived" class="stat-value">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Tempo conectado:</span>
+                    <span id="connectionTime" class="stat-value">00:00</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Status da conexão:</span>
+                    <span id="wsStatus" class="stat-value">Desconectado</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Room List -->
+        <div class="room-list">
+            <h3>🏠 Salas Disponíveis</h3>
+            <div id="roomsList" class="rooms">
+                <div class="room-item" data-room="general">
+                    <span class="room-name">💬 General</span>
+                    <span class="room-users">0 usuários</span>
+                </div>
+                <div class="room-item" data-room="tech">
+                    <span class="room-name">💻 Tecnologia</span>
+                    <span class="room-users">0 usuários</span>
+                </div>
+                <div class="room-item" data-room="random">
+                    <span class="room-name">🎲 Aleatório</span>
+                    <span class="room-users">0 usuários</span>
+                </div>
+                <div class="room-item" data-room="vip">
+                    <span class="room-name">👑 VIP</span>
+                    <span class="room-users">0 usuários</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div id="toast" class="toast"></div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>
