@@ -83,24 +83,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Configuration Examples**: Examples of different WebSocket configurations
 - **Best Practices**: Guidelines for WebSocket hub organization and connection management
 
-### 🏗️ Code Structure
-```
-pkg/hikari/
-├── app.go              # Enhanced with WebSocket support
-├── context.go          # Base context (unchanged)
-├── ws-context.go       # ✨ NEW: WebSocket context implementation
-├── websocket.go        # ✨ NEW: WebSocket core functionality
-├── group.go            # Route groups (existing)
-├── router.go           # Enhanced routing (existing)
-└── ...
-
-examples/
-├── chat-app/          # ✨ NEW: Real-time chat application
-├── websocket-echo/    # ✨ NEW: Simple echo WebSocket server
-├── multi-room-chat/   # ✨ NEW: Multi-room chat with hubs
-└── ...
-```
-
 ### 💡 Usage Examples
 
 #### Basic WebSocket Setup
@@ -130,7 +112,7 @@ app.WebSocket("/ws/private", "private", privateChatHandler)
 
 #### JSON Message Handling
 ```go
-app.WebSocket("/ws/api", "api_hub", func(c *hikari.WebSocketContext) {
+app.WebSocket("/ws/api", "api_hub", func(c *hikari.WSContext) {
     if c.IsTextMessage() {
         var msg ChatMessage
         if err := c.Bind(&msg); err == nil {

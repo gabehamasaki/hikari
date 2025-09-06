@@ -16,7 +16,7 @@ func (a *App) loggerMiddleware(next HandlerFunc) HandlerFunc {
 			zap.String("method", c.Method()),
 			zap.String("path", c.Path()),
 			zap.String("remote_addr", c.Request.RemoteAddr),
-			zap.String("user_agent", c.Request.Header.Get("User-Agent")),
+			//zap.String("user_agent", c.Request.Header.Get("User-Agent")),
 		)
 
 		// Replace the context logger with the enriched one

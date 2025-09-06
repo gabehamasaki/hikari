@@ -64,7 +64,7 @@ func NewWebSocketManager(config *WebSocketConfig, logger *zap.Logger) *WebSocket
 	}
 }
 
-func (wm *WebSocketManager) CreateHub(name string) *WebSocketHub {
+func (wm *WebSocketManager) RegisterHub(name string) *WebSocketHub {
 	wm.mu.Lock()
 	defer wm.mu.Unlock()
 
@@ -75,7 +75,7 @@ func (wm *WebSocketManager) CreateHub(name string) *WebSocketHub {
 		register:    make(chan *WebSocketConnection),
 		unregister:  make(chan *WebSocketConnection),
 		broadcast:   make(chan []byte),
-		logger:      wm.logger,
+		logger:      wm.logger.With(zap.String("hub", name)),
 		ctx:         ctx,
 		cancel:      cancel,
 	}
@@ -83,7 +83,6 @@ func (wm *WebSocketManager) CreateHub(name string) *WebSocketHub {
 	wm.hubs[name] = hub
 	go hub.run()
 
-	wm.logger.Info("WebSocket hub created", zap.String("hub", name))
 	return hub
 }
 
@@ -107,7 +106,7 @@ func (wm *WebSocketManager) RemoveHub(name string) {
 func (wm *WebSocketManager) Upgrade(c *Context, hubName string, handler WebSocketHandler) error {
 	hub, ok := wm.GetHub(hubName)
 	if !ok {
-		hub = wm.CreateHub(hubName)
+		hub = wm.RegisterHub(hubName)
 	}
 
 	conn, err := wm.upgrader.Upgrade(c.Writer, c.Request, nil)
@@ -124,16 +123,22 @@ func (wm *WebSocketManager) Upgrade(c *Context, hubName string, handler WebSocke
 		id:      connId,
 		logger:  wm.logger.With(zap.String("conn_id", connId)),
 		request: c.Request,
+		ctx:     c,
 	}
-
-	wsConn.ctx, wsConn.cancel = context.WithCancel(c.Context)
-
-	hub.register <- wsConn
+	select {
+	case hub.register <- wsConn:
+		wm.logger.Info("WebSocket connection registered", zap.String("conn_id", connId))
+	case <-time.After(wm.config.RegisterTimeout):
+		conn.Close()
+		return fmt.Errorf("failed to register connection: timeout")
+	}
+	wm.logger.Info("WebSocket connection established", zap.String("conn_id", connId))
 
 	go wsConn.writePump(wm.config)
-	go wsConn.readPump(wm.config, handler, c)
 
-	wm.logger.Info("WebSocket connection established", zap.String("conn_id", connId), zap.String("hub", hubName))
+	wsConn.readPump(wm.config, handler, c)
+
+	wm.logger.Info("WebSocket connection ended", zap.String("conn_id", connId))
 	return nil
 }
 
@@ -174,7 +179,7 @@ func (h *WebSocketHub) run() {
 				default:
 					close(conn.send)
 					delete(h.connections, conn.id)
-					h.logger.Warn("WebSocket connection send buffer full, connection closed", zap.String("conn_id", conn.id))
+					h.logger.Warn("WebSocket connection send buffer full, connection closed")
 				}
 			}
 			h.mu.RUnlock()
@@ -186,7 +191,7 @@ func (c *WebSocketConnection) readPump(config *WebSocketConfig, handler WebSocke
 	defer func() {
 		c.hub.unregister <- c
 		c.conn.Close()
-		c.logger.Info("WebSocket connection closed", zap.String("conn_id", c.id), zap.String("hub", c.hub.name))
+		c.logger.Info("WebSocket connection closed")
 	}()
 
 	c.conn.SetReadDeadline(time.Now().Add(config.PongTimeout))
@@ -216,7 +221,18 @@ func (c *WebSocketConnection) readPump(config *WebSocketConfig, handler WebSocke
 					data:        message,
 				}
 
-				go handler(wsContext)
+				go func() {
+					defer func() {
+						if r := recover(); r != nil {
+							c.logger.Error("WebSocket handler panic",
+								zap.Any("panic", r),
+								zap.String("conn_id", c.id),
+							)
+						}
+					}()
+
+					handler(wsContext)
+				}()
 			}
 		}
 	}
@@ -268,7 +284,7 @@ func (c *WebSocketConnection) Send(message []byte) error {
 	default:
 		close(c.send)
 		c.closed = true
-		c.logger.Warn("WebSocket send buffer full, message dropped", zap.String("conn_id", c.id), zap.String("hub", c.hub.name))
+		c.logger.Warn("WebSocket send buffer full, message dropped", zap.String("hub", c.hub.name))
 		return nil
 	}
 }
@@ -281,7 +297,7 @@ func (c *WebSocketConnection) Close() {
 		c.cancel()
 		close(c.send)
 		c.conn.Close()
-		c.logger.Info("WebSocket connection closed manually", zap.String("conn_id", c.id), zap.String("hub", c.hub.name))
+		c.logger.Info("WebSocket connection closed manually", zap.String("hub", c.hub.name))
 	}
 }
 

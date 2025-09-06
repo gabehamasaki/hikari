@@ -13,6 +13,7 @@ type WebSocketConfig struct {
 	EnableCompression bool
 	PingInterval      time.Duration
 	PongTimeout       time.Duration
+	RegisterTimeout   time.Duration
 }
 
 func DefaultWebSocketConfig() *WebSocketConfig {
@@ -24,5 +25,6 @@ func DefaultWebSocketConfig() *WebSocketConfig {
 		EnableCompression: true,
 		PingInterval:      30 * time.Second,
 		PongTimeout:       60 * time.Second,
+		RegisterTimeout:   30 * time.Second,
 	}
 }

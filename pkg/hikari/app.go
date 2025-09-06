@@ -105,6 +105,22 @@ func (a *App) ListenAndServe() {
 		zap.String("address", a.addr),
 	)
 
+	for _, route := range a.router.routes {
+		a.logger.Info("HTTP route configured",
+			zap.String("method", route.method),
+			zap.String("pattern", route.pattern),
+		)
+	}
+
+	// Listing all configured WebSocket and HTTP routes
+	if a.wsManager != nil {
+		for hubName := range a.wsManager.hubs {
+			a.logger.Info("WebSocket Hub configured",
+				zap.String("hub", hubName),
+			)
+		}
+	}
+
 	// Channel to receive server errors
 	serverErr := make(chan error, 1)
 
@@ -174,6 +190,10 @@ func (a *App) DELETE(pattern string, handler HandlerFunc, middlewares ...Middlew
 }
 
 func (a *App) WebSocket(path, hubName string, handler WebSocketHandler, middlewares ...Middleware) {
+	if a.wsManager != nil {
+		a.wsManager.RegisterHub(hubName)
+	}
+
 	wsHandler := func(c *Context) {
 		if a.wsManager == nil {
 			a.logger.Error("WebSocket manager not initialized. Call WithWebSocket() before using WebSocket routes.")
