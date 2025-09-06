@@ -19,6 +19,8 @@ type App struct {
 	logger      *zap.Logger
 
 	requestTimeout time.Duration
+
+	wsManager *WebSocketManager
 }
 
 func New(addr string) *App {
@@ -44,41 +46,21 @@ func New(addr string) *App {
 	}
 }
 
-func (a *App) GET(pattern string, handler HandlerFunc, middlewares ...Middleware) {
-	a.router.handle(http.MethodGet, pattern, handler, middlewares...)
-}
-
-func (a *App) POST(pattern string, handler HandlerFunc, middlewares ...Middleware) {
-	a.router.handle(http.MethodPost, pattern, handler, middlewares...)
-}
-
-func (a *App) PUT(pattern string, handler HandlerFunc, middlewares ...Middleware) {
-	a.router.handle(http.MethodPut, pattern, handler, middlewares...)
-}
-
-func (a *App) PATCH(pattern string, handler HandlerFunc, middlewares ...Middleware) {
-	a.router.handle(http.MethodPatch, pattern, handler, middlewares...)
-}
-
-func (a *App) DELETE(pattern string, handler HandlerFunc, middlewares ...Middleware) {
-	a.router.handle(http.MethodDelete, pattern, handler, middlewares...)
-}
-
-func (a *App) Group(prefix string, middlewares ...Middleware) *Group {
-	return &Group{
-		prefix:      prefix,
-		middlewares: middlewares,
-		app:         a,
-	}
-}
-
-func (a *App) Use(middleware Middleware) {
-	a.middlewares = append(a.middlewares, middleware)
-}
-
 func (a *App) buildHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		reqCtx, cancel := context.WithTimeout(req.Context(), a.requestTimeout)
+		isWebSocket := a.wsManager != nil && req.Header.Get("Upgrade") == "websocket" && req.Header.Get("Connection") == "Upgrade"
+
+		var reqCtx context.Context
+		var cancel context.CancelFunc
+
+		if isWebSocket {
+			// For WebSocket requests, use the request's context without timeout
+			reqCtx = req.Context()
+			cancel = func() {}
+		} else {
+			// For regular HTTP requests, apply the request timeout
+			reqCtx, cancel = context.WithTimeout(req.Context(), a.requestTimeout)
+		}
 		defer cancel()
 
 		routerHandler := func(c *Context) {
@@ -123,6 +105,22 @@ func (a *App) ListenAndServe() {
 		zap.String("address", a.addr),
 	)
 
+	for _, route := range a.router.routes {
+		a.logger.Info("HTTP route configured",
+			zap.String("method", route.method),
+			zap.String("pattern", route.pattern),
+		)
+	}
+
+	// Listing all configured WebSocket and HTTP routes
+	if a.wsManager != nil {
+		for hubName := range a.wsManager.hubs {
+			a.logger.Info("WebSocket Hub configured",
+				zap.String("hub", hubName),
+			)
+		}
+	}
+
 	// Channel to receive server errors
 	serverErr := make(chan error, 1)
 
@@ -165,4 +163,71 @@ func (a *App) Shutdown(ctx context.Context) error {
 
 func (a *App) SetRequestTimeout(d time.Duration) {
 	a.requestTimeout = d
+}
+
+func (a *App) WithWebSocket(config *WebSocketConfig) {
+	a.wsManager = NewWebSocketManager(config, a.logger)
+}
+
+func (a *App) GET(pattern string, handler HandlerFunc, middlewares ...Middleware) {
+	a.router.handle(http.MethodGet, pattern, handler, middlewares...)
+}
+
+func (a *App) POST(pattern string, handler HandlerFunc, middlewares ...Middleware) {
+	a.router.handle(http.MethodPost, pattern, handler, middlewares...)
+}
+
+func (a *App) PUT(pattern string, handler HandlerFunc, middlewares ...Middleware) {
+	a.router.handle(http.MethodPut, pattern, handler, middlewares...)
+}
+
+func (a *App) PATCH(pattern string, handler HandlerFunc, middlewares ...Middleware) {
+	a.router.handle(http.MethodPatch, pattern, handler, middlewares...)
+}
+
+func (a *App) DELETE(pattern string, handler HandlerFunc, middlewares ...Middleware) {
+	a.router.handle(http.MethodDelete, pattern, handler, middlewares...)
+}
+
+func (a *App) WebSocket(path, hubName string, handler WebSocketHandler, middlewares ...Middleware) {
+	if a.wsManager != nil {
+		a.wsManager.RegisterHub(hubName)
+	}
+
+	wsHandler := func(c *Context) {
+		if a.wsManager == nil {
+			a.logger.Error("WebSocket manager not initialized. Call WithWebSocket() before using WebSocket routes.")
+			c.JSON(http.StatusInternalServerError, map[string]string{"error": "WebSocket not configured"})
+			return
+		}
+
+		err := a.wsManager.Upgrade(c, hubName, handler)
+		if err != nil {
+			a.logger.Error("WebSocket upgrade failed", zap.Error(err))
+			c.JSON(http.StatusInternalServerError, map[string]string{"error": "WebSocket upgrade failed"})
+			return
+		}
+	}
+
+	a.GET(path, wsHandler, middlewares...)
+}
+
+func (a *App) GetWebSocketHub(name string) (*WebSocketHub, bool) {
+	if a.wsManager == nil {
+		a.logger.Error("WebSocket manager not initialized. Call WithWebSocket() before using WebSocket hubs.")
+		return nil, false
+	}
+	return a.wsManager.GetHub(name)
+}
+
+func (a *App) Group(prefix string, middlewares ...Middleware) *Group {
+	return &Group{
+		prefix:      prefix,
+		middlewares: middlewares,
+		app:         a,
+	}
+}
+
+func (a *App) Use(middleware Middleware) {
+	a.middlewares = append(a.middlewares, middleware)
 }

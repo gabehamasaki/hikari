@@ -5,6 +5,126 @@ All notable changes to the Hikari Go framework will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.1.5] - 2025-09-06
+
+### 🚀 Added
+
+#### WebSocket Support System
+- **Full WebSocket Integration**: Native WebSocket support with Gorilla WebSocket library
+- **WebSocket Manager**: Centralized management for WebSocket connections and hubs
+- **WebSocket Hubs**: Multi-hub architecture for organizing connections by topic/room
+- **WebSocket Context**: Extended Context specifically for WebSocket operations with familiar API
+- **Connection Lifecycle**: Complete connection management with graceful shutdown and cleanup
+
+#### WebSocket Features
+- **Hub-based Architecture**: Organize connections into separate hubs/rooms
+- **Broadcasting**: Send messages to all connections in a hub
+- **Direct Messaging**: Send messages to specific connections by ID
+- **Connection Pooling**: Automatic connection registration and cleanup
+- **Ping/Pong Handling**: Built-in keepalive mechanism with configurable intervals
+- **Message Types**: Support for text and binary message types
+
+#### WebSocket Context & API
+- **WebSocketContext**: Extends standard Context with WebSocket-specific methods
+  - `Send()`: Send raw bytes to the connection
+  - `JSON()`: Send JSON messages with automatic marshaling
+  - `String()`: Send text messages
+  - `Broadcast()`: Broadcast to all connections in the hub
+  - `BroadcastJSON()`: Broadcast JSON messages
+  - `SendToConnection()`: Send to specific connection by ID
+  - `Bind()`: Bind JSON messages to structs
+- **Message Type Helpers**: `IsTextMessage()`, `IsBinaryMessage()`, `GetMessage()`
+- **Connection Info**: Access to connection ID, hub name, and connection status
+
+#### WebSocket Configuration
+- **Flexible Configuration**: Comprehensive configuration options
+  - Read/Write buffer sizes
+  - Handshake timeout
+  - Origin checking function
+  - Compression support
+  - Ping/Pong intervals and timeouts
+- **Default Configuration**: Sensible defaults with `DefaultWebSocketConfig()`
+
+#### Request Context Management
+- **Smart Timeout Handling**: WebSocket requests bypass request timeouts automatically
+- **Context Preservation**: Original HTTP request context preserved for WebSocket connections
+- **Middleware Compatibility**: WebSocket routes work seamlessly with existing middleware
+
+### 🔧 Enhanced
+
+#### Framework Core
+- **App Structure**: Added `wsManager` field to main App struct
+- **Route Registration**: New `WebSocket()` method for registering WebSocket endpoints
+- **Hub Management**: `GetWebSocketHub()` method for accessing hubs from application code
+- **Connection Detection**: Automatic WebSocket upgrade request detection
+- **Graceful Shutdown**: WebSocket connections properly closed during application shutdown
+
+#### Context System
+- **Extended Context**: WebSocketContext extends the familiar Context API
+- **Seamless Integration**: WebSocket handlers use the same pattern as HTTP handlers
+- **Middleware Support**: Full middleware support for WebSocket routes
+- **Storage Access**: Access to Context storage system for session data
+
+#### Connection Management
+- **Thread-Safe Operations**: All WebSocket operations are thread-safe
+- **Resource Cleanup**: Automatic cleanup of connections and channels
+- **Error Handling**: Comprehensive error handling with structured logging
+- **Connection Tracking**: Unique connection IDs and connection counting
+
+### 🐛 Fixed
+- **Request Timeout**: WebSocket requests now properly bypass request timeouts
+- **Context Cancellation**: Proper context handling for long-lived WebSocket connections
+- **Memory Leaks**: Automatic cleanup prevents connection and goroutine leaks
+- **Concurrent Access**: Thread-safe operations on shared connection pools
+
+### 📚 Documentation
+- **WebSocket Guide**: Complete guide on implementing WebSocket functionality
+- **API Reference**: Full API documentation for WebSocket-specific methods
+- **Configuration Examples**: Examples of different WebSocket configurations
+- **Best Practices**: Guidelines for WebSocket hub organization and connection management
+
+### 💡 Usage Examples
+
+#### Basic WebSocket Setup
+```go
+app := hikari.New(":8080")
+app.WithWebSocket(hikari.DefaultWebSocketConfig())
+
+app.WebSocket("/ws/chat", "chat_room", func(c *hikari.WebSocketContext) {
+    if c.IsTextMessage() {
+        message := c.GetMessage()
+        c.Broadcast([]byte(message))
+    }
+})
+```
+
+#### Multi-Hub Chat Application
+```go
+// General chat
+app.WebSocket("/ws/general", "general", generalChatHandler)
+
+// VIP chat with auth middleware
+app.WebSocket("/ws/vip", "vip", vipChatHandler, authMiddleware)
+
+// Private messages
+app.WebSocket("/ws/private", "private", privateChatHandler)
+```
+
+#### JSON Message Handling
+```go
+app.WebSocket("/ws/api", "api_hub", func(c *hikari.WSContext) {
+    if c.IsTextMessage() {
+        var msg ChatMessage
+        if err := c.Bind(&msg); err == nil {
+            response := ProcessMessage(msg)
+            c.JSON(response)
+        }
+    }
+})
+```
+
+---
+
 ## [v0.1.4] - 2025-09-04
 
 ### 🚀 Added
