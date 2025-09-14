@@ -1,4 +1,4 @@
-module github.com/gabehamasaki/hikari-go
+module github.com/gabehamasaki/hikari
 
 go 1.24.4
 
