@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/gabehamasaki/hikari-go/pkg/hikari"
+	"github.com/gabehamasaki/hikari/pkg/hikari"
 )
 
 type Todo struct {

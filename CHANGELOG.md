@@ -240,4 +240,4 @@ authGroup := app.Group("/api/v1", AuthMiddleware())
 
 ---
 
-**Full Changelog**: https://github.com/gabehamasaki/hikari-go/compare/v0.1.3...v0.1.4
+**Full Changelog**: https://github.com/gabehamasaki/hikari/compare/v0.1.3...v0.1.4

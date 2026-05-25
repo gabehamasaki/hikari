@@ -36,7 +36,7 @@ package main
 
 import (
     "net/http"
-    "github.com/gabehamasaki/hikari-go/pkg/hikari"
+    "github.com/gabehamasaki/hikari/pkg/hikari"
 )
 
 func main() {

@@ -35,7 +35,7 @@ package main
 
 import (
     "net/http"
-    "github.com/gabehamasaki/hikari-go/pkg/hikari"
+    "github.com/gabehamasaki/hikari/pkg/hikari"
 )
 
 func main() {
@@ -394,7 +394,7 @@ package main
 import (
     "net/http"
     "strconv"
-    "github.com/gabehamasaki/hikari-go/pkg/hikari"
+    "github.com/gabehamasaki/hikari/pkg/hikari"
     "go.uber.org/zap"
 )
 

@@ -36,7 +36,7 @@ package main
 
 import (
     "net/http"
-    "github.com/gabehamasaki/hikari-go/pkg/hikari"
+    "github.com/gabehamasaki/hikari/pkg/hikari"
 )
 
 func main() {
@@ -785,7 +785,7 @@ import (
     "net/http"
     "strconv"
     "time"
-    "github.com/gabehamasaki/hikari-go/pkg/hikari"
+    "github.com/gabehamasaki/hikari/pkg/hikari"
     "go.uber.org/zap"
 )
 
@@ -1139,7 +1139,7 @@ npm install
 npm start
 ```
 
-Visit `http://localhost:3000/hikari-go/` to view the documentation locally.
+Visit `http://localhost:3000/hikari/` to view the documentation locally.
 
 ## �📄 License
 
